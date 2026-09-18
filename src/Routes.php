@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use App\Admin\AuthMiddleware;
+use App\Admin\FisiereController;
 use App\Admin\LoginController;
 use Slim\App;
 use Slim\Views\Twig;
@@ -27,6 +28,13 @@ return function (App $app, Twig $twig, array $container): void {
 
     $app->group($adminPath, function ($g) use ($twig, $container) {
         $g->get('', fn($rq, $rs) => (new LoginController($twig, $container))->dashboard($rq, $rs));
-        // Task 5+: meniu, fisiere, setari, utilizatori, mesaje
+
+        $fc = fn() => new FisiereController($twig, $container);
+        $g->get('/fisiere',                    fn($rq, $rs) => $fc()->index($rq, $rs));
+        $g->post('/fisiere/incarca',           fn($rq, $rs) => $fc()->incarca($rq, $rs));
+        $g->post('/fisiere/editor',            fn($rq, $rs) => $fc()->editor($rq, $rs));
+        $g->post('/fisiere/{id:[0-9]+}/redenumeste', fn($rq, $rs, $a) => $fc()->redenumeste($rq, $rs, $a));
+        $g->post('/fisiere/{id:[0-9]+}/sterge',      fn($rq, $rs, $a) => $fc()->sterge($rq, $rs, $a));
+        // Task 5+: meniu, setari, utilizatori, mesaje
     })->add(new AuthMiddleware($container['auth'], $adminPath, $basePath));
 };

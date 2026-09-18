@@ -1,0 +1,72 @@
+{% extends 'admin/layout.twig' %}
+{% block title %}Fișiere{% endblock %}
+{% block content %}
+{% set qs = {an: filtru.an, luna: filtru.luna, q: filtru.q, picker: picker ? '1' : '', imagini: filtru.imagini ? '1' : ''} %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 m-0">Fișiere</h1>
+    <form class="d-flex gap-2" method="get" action="{{ base }}{{ admin_path }}/fisiere">
+        {% if picker %}<input type="hidden" name="picker" value="1">{% endif %}
+        {% if filtru.imagini %}<input type="hidden" name="imagini" value="1">{% endif %}
+        <select class="form-select form-select-sm" name="an" onchange="this.form.submit()">
+            <option value="">Toți anii</option>
+            {% for a in ani_luni %}<option value="{{ a.an }}" {{ filtru.an == a.an ? 'selected' }}>{{ a.an }}</option>{% endfor %}
+        </select>
+        <select class="form-select form-select-sm" name="luna" onchange="this.form.submit()">
+            <option value="">Toate lunile</option>
+            {% for a in ani_luni|filter(a => a.an == filtru.an) %}{% for l in a.luni %}<option value="{{ l }}" {{ filtru.luna == l ? 'selected' }}>{{ l }}</option>{% endfor %}{% endfor %}
+        </select>
+        <input class="form-control form-control-sm" type="search" name="q" value="{{ filtru.q }}" placeholder="Caută după nume">
+        <button class="btn btn-sm btn-outline-primary" type="submit">Caută</button>
+    </form>
+</div>
+
+<form class="adm-upload card card-body mb-3" method="post" enctype="multipart/form-data" action="{{ base }}{{ admin_path }}/fisiere/incarca">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    {% for k, v in qs %}{% if v %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}
+    <label class="form-label fw-semibold" for="f-fisiere">Încarcă fișiere (pdf, doc/x, xls/x, ppt/x, odt, jpg, png, webp, zip; max 50 MB fiecare)</label>
+    <div class="d-flex gap-2">
+        <input class="form-control" id="f-fisiere" type="file" name="fisiere[]" multiple>
+        <button class="btn btn-primary" type="submit">Încarcă</button>
+    </div>
+</form>
+
+<div class="table-responsive">
+<table class="table table-hover align-middle adm-table">
+    <thead><tr><th>Nume</th><th class="d-none d-md-table-cell">Cale</th><th class="d-none d-md-table-cell">Mărime</th><th class="d-none d-lg-table-cell">Data</th><th></th></tr></thead>
+    <tbody>
+    {% for f in fisiere %}
+        {% set url = base ~ fisiere_url ~ '/' ~ f.cale %}
+        <tr data-fisier-id="{{ f.id }}" data-fisier-cale="{{ f.cale }}" data-fisier-nume="{{ f.nume_afisat }}" data-fisier-url="{{ url }}" {% if picker %}class="adm-picker__rand" role="button"{% endif %}>
+            <td>
+                {% if f.mime starts with 'image/' %}<img class="adm-thumb me-2" src="{{ url }}" alt="">{% endif %}
+                {% if picker %}<span>{{ f.nume_afisat }}</span>{% else %}
+                <form class="d-inline-flex gap-1" method="post" action="{{ base }}{{ admin_path }}/fisiere/{{ f.id }}/redenumeste">
+                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                    {% for k, v in qs %}{% if v %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}
+                    <input class="form-control form-control-sm adm-inline-input" name="nume_afisat" value="{{ f.nume_afisat }}">
+                    <button class="btn btn-sm btn-outline-secondary" type="submit" title="Salvează numele">✓</button>
+                </form>{% endif %}
+            </td>
+            <td class="d-none d-md-table-cell text-muted small"><a href="{{ url }}" target="_blank" rel="noopener">{{ f.cale }}</a></td>
+            <td class="d-none d-md-table-cell small">{{ (f.marime / 1024)|round }} KB</td>
+            <td class="d-none d-lg-table-cell small">{{ f.incarcat_la|date('d.m.Y') }}</td>
+            <td class="text-end text-nowrap">
+                {% if picker %}
+                    <button class="btn btn-sm btn-primary adm-picker__alege" type="button">Alege</button>
+                {% else %}
+                    <button class="btn btn-sm btn-outline-secondary adm-copiaza" type="button" data-copiaza="{{ url }}">Copiază link</button>
+                    <form class="d-inline" method="post" action="{{ base }}{{ admin_path }}/fisiere/{{ f.id }}/sterge" onsubmit="return confirm('Ștergi definitiv „{{ f.nume_afisat|e('js') }}”?')">
+                        <input type="hidden" name="_csrf" value="{{ csrf }}">
+                        {% for k, v in qs %}{% if v %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}
+                        <button class="btn btn-sm btn-outline-danger" type="submit">Șterge</button>
+                    </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% else %}
+        <tr><td colspan="5" class="text-muted">Niciun fișier{% if filtru.q %} pentru „{{ filtru.q }}”{% endif %}.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

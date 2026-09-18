@@ -14,3 +14,6 @@
 .adm-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .adm-login__card { width: 100%; max-width: 420px; }
 .adm-card:hover { border-color: var(--fp-albastru); }
+.adm-thumb{width:40px;height:40px;object-fit:cover;border-radius:4px}
+.adm-inline-input{min-width:220px}
+.adm-picker__rand{cursor:pointer}
