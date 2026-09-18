@@ -19,7 +19,6 @@ Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO
 
 ## Convenții
 - Fluxul de lucru: brainstorming → spec → plan (`docs/superpowers/plans/`) → execuție cu subagenți (`superpowers:subagent-driven-development`), ledger în `.superpowers/sdd/<plan>/progress.md` (gitignored). Modele: sonnet pentru task-uri mecanice, opus pentru integrare, fable doar la revizia finală.
-- `scripts/review-package` din skill pică pe `tests/fixtures/rau.php.pdf` (driver git de diff pentru PDF) → construiește diff-ul manual cu `git diff … -- . ':!tests/fixtures' ':!assets/vendor'`.
 - `fisiere.legacy_url` are collation case-insensitive → `gasesteDupaLegacy` folosește `WHERE BINARY` (există `altul.pdf` și `altul.PDF` reale).
 - `Html::curata()` permite și `tel:`; `Curata` (migrare) aplică wpautop DUPĂ `Html::curata`, pe noduri, și convertește `h4-h6 → h3`, `h1 → h2`.
 - Intrarea de meniu e unitatea de conținut (`meniu.tip`: pagina/document/dosar/link/galerie). Slug unic pe secțiune.
@@ -44,6 +43,13 @@ Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO
 - Dropdown-urile de desktop se plafonează cu `:has()` (Firefox ≥ 121 / Safari ≥ 15.4; în browserele vechi se pierde doar plafonul de derulare, nu și flyout-urile), iar listele de nivel 2 cu peste 12 intrări își randează nivelul 3 INLINE (`fp-submenu--inline`, li cu `fp-has-sub-inline`), nu ca flyout lateral — altfel `overflow` ar tăia submeniul.
 - Formularul de contact are throttle de 5 mesaje/oră/IP (`mesaje_contact.ip_hash`, `trimis_la`); peste prag răspunde cu același 302 „succes" tăcut ca la bot, fără salvare și fără mail. Fără `IP_SALT`, `ip_hash()` e null și throttle-ul se sare.
 - Miniaturile galeriilor se generează la cerere în `fisiere/mini/{480|1600}/…` (`Fisiere\Miniatura`), gitignored ca tot `fisiere/`; `reset_continut.php` le șterge.
+- JSON-LD: construiește obiectul ca hash Twig și emite-l o singură dată cu `{{ ld|json_encode(constant('JSON_HEX_TAG'))|raw }}`; NU interpola valori în `<script>` (autoescape-ul HTML strică JSON-ul). În teste, extrage blocul `ld+json` și `json_decode`-l, nu căuta substringuri.
+- `Setari\Repository::toate()` cache-uiește per proces la prima citire → în teste setează valorile (`set()`) ÎNAINTE de prima `cerere()` și restaurează-le în `finally`.
+- Chrome headless ad-hoc: `chrome.exe --headless=new --disable-gpu --user-data-dir="$TEMP/<profil>" --window-size=W,H --screenshot=<png> <url>` — fără `--user-data-dir` dedicat nu scrie nimic dacă mai e un Chrome deschis; Read pe PNG ca să judeci layoutul.
+- `og_image` e VARIABILĂ Twig (implicit `/assets/img/og-default.png`), pasată din controller — nu bloc. Namespace-ul `App\Public` e valid (PHP ≥ 8.0 acceptă cuvinte rezervate în nume calificate).
+- `scripts/descarca_fonturi.php` dedupează pe conținut: Google servește un singur woff2 variabil pentru toate greutățile DM Sans → 4 fișiere în `assets/fonts/`, 8 reguli `@font-face` (500/700 refolosesc `dm-sans-400-*.woff2`; e corect).
+- La dispatch de subagenți pune explicit linia `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` în prompt, altfel folosesc atribuirea din reminderul lor.
+- Restanțe pentru Plan 4 (din revizia finală M3): gardă de megapixeli la `Fisiere\Miniatura` (PNG uriaș → OOM), HTML-ul public nu e cache-abil (sesiune pornită pe orice cerere), `X-Forwarded-For` la throttle dacă e proxy, `IP_SALT` și `SMTP_HOST` reale pe server.
 
 ## Migrare din WordPress
 
