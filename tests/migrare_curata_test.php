@@ -74,4 +74,18 @@ ok('linkuri_rupte deduplicat', $r['linkuri_rupte'] === ['/wp-content/uploads/201
 // 8g. wp-block-file cu clasă compusă
 $r = $c->proceseaza('<div class="wp-block-file is-style-x"><object data="x" type="application/pdf"></object><a href="https://www.flagprahova.ro/wp-content/uploads/2023/12/Comunicat-SDL.pdf">Comunicat</a><a href="https://www.flagprahova.ro/wp-content/uploads/2023/12/Comunicat-SDL.pdf" download>Download</a></div>');
 ok('wp-block-file clasă compusă', $n($r['html']) === '<p><a href="/fisiere/2023/12/comunicat-sdl.pdf">Comunicat</a></p>');
+
+// 9. Regresii revizie runda 2
+
+// 9a. newline în interiorul unui inline de la rădăcină => HTML balansat
+ok('wpautop: nu taie în interiorul unui inline', $c->proceseaza("Intro <strong>bold\ncontinuare</strong> final.")['html'] === '<p>Intro <strong>bold continuare</strong> final.</p>');
+ok('wpautop: link intact peste newline', $c->proceseaza("Vezi <a href=\"https://www.madr.ro/x\">ghidul\noficial</a> aici.")['html'] === '<p>Vezi <a href="https://www.madr.ro/x">ghidul oficial</a> aici.</p>');
+
+// 9b. text spam ca nod text direct într-un bloc
+$r = $c->proceseaza('<div><p>Ghid bun</p>Cheap essay writing here.</div>');
+ok('spam ca text liber în bloc', !str_contains($r['html'], 'essay') && str_contains($r['html'], 'Ghid bun') && $r['spam_eliminat'] === 1);
+
+// 9c. h4/h5/h6 => h3 (altfel Html::curata le-ar despacheta în text nud)
+$r = $c->proceseaza('<h4>Consultare publică</h4><p>A</p><h6>Anexe</h6>');
+ok('h4/h6 => h3', $n($r['html']) === '<h3>Consultare publică</h3><p>A</p><h3>Anexe</h3>');
 final_test();

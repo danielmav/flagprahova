@@ -100,6 +100,17 @@ final class Curata
                 $spam++;
             }
         }
+        // 4a-bis. Text spam nefiind într-un bloc propriu (`<div><p>bun</p>spam.</div>`):
+        // nodul text se tratează la fel ca un bloc-frunză.
+        foreach (iterator_to_array($xp->query('.//text()', $rad)) as $txt) {
+            if (trim($txt->textContent) === '' || !$this->atasat($txt, $rad)) {
+                continue;
+            }
+            if (preg_match(self::SPAM_TEXT, $txt->textContent)) {
+                $txt->parentNode?->removeChild($txt);
+                $spam++;
+            }
+        }
         // 4b. Ancore spam rămase: scoatem linkul, păstrăm textul (poate fi un
         // cuvânt legitim ancorat de spammer în mijlocul unei fraze reale).
         foreach (iterator_to_array($xp->query('.//a[@href]', $rad)) as $a) {
@@ -145,10 +156,13 @@ final class Curata
         }
 
         // 7. h1 → h2 (pagina are un singur h1, titlul)
-        foreach (iterator_to_array($xp->query('.//h1', $rad)) as $h1) {
-            $h2 = $dom->createElement('h2');
-            while ($h1->firstChild) { $h2->appendChild($h1->firstChild); }
-            $h1->parentNode?->replaceChild($h2, $h1);
+        // `Html::curata` permite doar h2/h3; restul ar fi despachetate în text nud.
+        foreach (['.//h1' => 'h2', './/h4|.//h5|.//h6' => 'h3'] as $interogare => $nou) {
+            foreach (iterator_to_array($xp->query($interogare, $rad)) as $vechi) {
+                $el = $dom->createElement($nou);
+                while ($vechi->firstChild) { $el->appendChild($vechi->firstChild); }
+                $vechi->parentNode?->replaceChild($el, $vechi);
+            }
         }
 
         // 8. Blocuri rămase goale după eliminări (ex. `<p><a><img></a></p>` cu
@@ -239,34 +253,73 @@ final class Curata
         $rad = $dom->getElementById('radacina');
         if ($rad === null) { return $html; }
 
+        // Lucrăm pe noduri, nu pe HTML serializat: o împărțire pe `\n` făcută pe
+        // text serializat ar putea tăia în interiorul unui element inline și ar
+        // produce HTML nebalansat (`<p>Intro <strong>bold</p><p>rest</strong></p>`).
         $out = '';
-        $tampon = '';
-        $goleste = static function () use (&$out, &$tampon): void {
-            $t = trim($tampon);
-            $tampon = '';
-            if ($t === '') { return; }
-            $parti = preg_split('/\n\s*\n/', $t) ?: [$t];
-            if (count($parti) < 2) { $parti = preg_split('/\n/', $t) ?: [$t]; }
-            foreach ($parti as $p) {
-                $p = trim($p);
-                if ($p !== '') { $out .= '<p>' . $p . '</p>'; }
-            }
+        $grup = [];
+        $goleste = function () use (&$out, &$grup): void {
+            foreach ($this->imparteGrup($grup) as $p) { $out .= '<p>' . $p . '</p>'; }
+            $grup = [];
         };
         foreach ($rad->childNodes as $c) {
-            $bucata = (string) $dom->saveHTML($c);
             if ($c instanceof DOMElement && in_array(strtolower($c->tagName), self::BLOCURI, true)) {
                 $goleste();
-                $out .= $bucata;
+                $out .= (string) $dom->saveHTML($c);
                 continue;
             }
-            if (!$c instanceof DOMElement && !$c instanceof DOMText) {
-                continue; // comentarii, instrucțiuni de procesare
+            if ($c instanceof DOMText) {
+                $grup[] = ['text' => true, 'val' => $c->textContent];
+                continue;
             }
-            $tampon .= $bucata;
+            if ($c instanceof DOMElement) {
+                // Element inline: intră întreg într-un paragraf, niciodată tăiat.
+                $grup[] = ['text' => false, 'val' => (string) $dom->saveHTML($c)];
+            }
+            // restul (comentarii, instrucțiuni de procesare) se ignoră
         }
         $goleste();
 
         return $this->colapseazaSpatii(trim($out));
+    }
+
+    /**
+     * Împarte o secvență de noduri inline/text în paragrafe. Tăieturile se fac
+     * DOAR în nodurile text: mai întâi pe linie goală, iar dacă nu există niciuna,
+     * pe orice `\n` (HTML-ul vechi separa paragrafele doar prin newline).
+     *
+     * @param array<int, array{text: bool, val: string}> $grup
+     * @return string[]
+     */
+    private function imparteGrup(array $grup): array
+    {
+        foreach (['/\n[ \t]*\n\s*/', '/\n/'] as $separator) {
+            $par = [];
+            $cur = '';
+            foreach ($grup as $nod) {
+                if (!$nod['text']) {
+                    $cur .= $nod['val'];
+                    continue;
+                }
+                $parti = preg_split($separator, $nod['val']) ?: [$nod['val']];
+                foreach ($parti as $i => $parte) {
+                    if ($i > 0) { $par[] = $cur; $cur = ''; }
+                    $cur .= htmlspecialchars($parte, ENT_NOQUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                }
+            }
+            $par[] = $cur;
+            $par = array_values(array_filter(
+                array_map(static fn(string $p): string => trim((string) preg_replace('/\s*\n\s*/', ' ', $p)), $par),
+                static fn(string $p): bool => $p !== ''
+            ));
+            if (count($par) > 1 || $par === []) {
+                return $par;
+            }
+            // un singur paragraf: mai încercăm o dată, cu separatorul mai laxist
+            $unic = $par;
+        }
+
+        return $unic ?? [];
     }
 
     /** `</p>\n<p>` → `</p><p>`, dar `</strong> <em>` rămâne cu spațiul lui. */
