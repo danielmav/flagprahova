@@ -81,6 +81,14 @@ final class Repository
         return $st->fetch() ?: null;
     }
 
+    /** Intrarea migrată din WordPress cu acest `legacy_id` (id de meniu vechi sau sintetic). */
+    public function gasesteDupaLegacy(int $legacyId): ?array
+    {
+        $st = $this->pdo->prepare('SELECT * FROM meniu WHERE legacy_id = :l LIMIT 1');
+        $st->execute(['l' => $legacyId]);
+        return $st->fetch() ?: null;
+    }
+
     public function copii(int $parentId): array
     {
         $st = $this->pdo->prepare('SELECT * FROM meniu WHERE parent_id = :p ORDER BY ordine, id');

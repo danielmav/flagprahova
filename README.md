@@ -61,6 +61,52 @@ Ce NU face deploy-ul și trebuie făcut manual — checklist la prima instalare:
 - [ ] **Verificare funcțională** — login în admin, o încărcare de fișier, un mesaj din formularul de
       contact ajuns pe email, un link „parolă uitată” primit și folosit.
 
+## Migrarea conținutului vechi
+
+Migrarea din baza WordPress veche (`DB_WP_NAME` în `.env`) se rulează o singură dată, în această ordine
+(vezi și secțiunea „Migrare din WordPress” din `CLAUDE.md`):
+
+```bash
+php database/import_fisiere.php --zip=cale/catre/arhiva-uploads.zip
+php database/migrate_wp.php
+php database/verifica_migrare.php
+php database/migrate_wp.php   # a doua rulare: idempotentă, creat = 0
+```
+
+Pe dev, `php database/reset_continut.php --da` șterge tot conținutul migrat (galerii, meniu, fișiere)
+și reface `setari` din `seed.php`, ca să poți relua migrarea de la zero.
+
+### Migrarea se rulează O SINGURĂ DATĂ, înainte de predare
+
+`migrate_wp.php` e idempotent pe `legacy_id` (nu duplică rânduri), dar la fiecare rulare
+**rescrie titlul, conținutul (`continut_html`), tipul, părintele, ordinea și vizibilitatea**
+fiecărei intrări migrate, cu valorile din WordPress. Singurul câmp păstrat este **slug-ul**
+(ca să nu se rupă linkurile deja date publicului).
+
+Concret: dacă clientul a editat din admin o pagină migrată, a ascuns o intrare sau a mutat-o,
+o nouă rulare a lui `migrate_wp.php` îi anulează modificările. De aceea migrarea se face o
+singură dată, înainte de predarea sitului; după predare nu se mai rulează.
+
+### Server fără acces SSH
+
+Pe o găzduire fără SSH (doar FTP / File Manager / phpMyAdmin) scripturile de migrare **nu**
+se rulează pe server. Procedura este:
+
+1. Migrarea se rulează **local**, pe o copie a bazei WordPress vechi (`DB_WP_*` în `.env`
+   local), până când `verifica_migrare.php` iese cu 0.
+2. Baza locală rezultată se exportă cu `mysqldump` și se importă pe server prin **phpMyAdmin**:
+
+   ```bash
+   mysqldump -u root --default-character-set=utf8mb4 --single-transaction flagprahova > flagprahova.sql
+   ```
+
+   (dacă importul prin phpMyAdmin depășește limita de upload, se împarte fișierul sau se
+   folosește opțiunea de import din fișier deja urcat prin FTP).
+3. Folderul `fisiere/` (cu subfolderele `AAAA/LL/`) se urcă integral prin **FTP / File Manager**,
+   împreună cu `fisiere/.htaccess`.
+4. Pe server, `DB_WP_NAME` rămâne **gol** în `.env`: aplicația publică nu are nevoie de baza
+   WordPress veche, iar scripturile de migrare nu trebuie să poată rula acolo.
+
 ## Documentație
 
 Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`

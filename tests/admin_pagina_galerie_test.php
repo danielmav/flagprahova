@@ -22,6 +22,8 @@ ok('Html: href protocol-relative scos', !str_contains(Html::curata('<a href="//e
 ok('Html: href absolut păstrat', str_contains(Html::curata('<a href="/fisiere/x.pdf">l</a>'), 'href="/fisiere/x.pdf"'));
 ok('Html: ancoră păstrată', str_contains(Html::curata('<a href="#sus">l</a>'), 'href="#sus"'));
 ok('Html: mailto păstrat', str_contains(Html::curata('<a href="mailto:a@b.ro">l</a>'), 'href="mailto:a@b.ro"'));
+// `tel:` e în lista albă: paginile de contact au numerele ca legături apelabile.
+ok('Html: tel păstrat', str_contains(Html::curata('<a href="tel:+40762609685">0762 609 685</a>'), 'href="tel:+40762609685"'));
 ok('Html: https păstrat', str_contains(Html::curata('<a href="https://x.ro/a?b=1">l</a>'), 'href="https://x.ro/a?b=1"'));
 ok('Html: img cu src protocol-relative pierde src', !str_contains(Html::curata('<img src="//evil.tld/a.png" alt="a">'), 'evil.tld'));
 ok('Html: rel existent păstrat, completat', Html::curata('<a href="https://x.ro" target="_blank" rel="nofollow">l</a>')

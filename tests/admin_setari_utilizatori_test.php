@@ -7,19 +7,20 @@ $uid = logheaza_test();
 $db  = new App\Database(settings()['db']);
 $log = dirname(__DIR__) . '/storage/logs/mail.log';
 $email2 = 'invitat-' . bin2hex(random_bytes(3)) . '@example.com';
+// Testul POSTează pe /admin/setari TOATE cheile, deci suprascrie și `landing_text`
+// și `footer_text`. Luăm un instantaneu complet și îl punem la loc în `finally`, ca
+// să nu rămână urme în baza REALĂ pe care rulează suita.
+$setariRepo = new App\Setari\Repository($db);
+$setariVechi = [];
+foreach (App\Setari\Repository::CHEI as $cheie) { $setariVechi[$cheie] = $setariRepo->get($cheie); }
 try {
     // Setări
     $r = cerere('GET', '/admin/setari');
     ok('GET setari => 200 cu câmpul email', $r->getStatusCode() === 200 && str_contains(corp($r), 'name="contact_email_destinatar"'));
-    $vechi = (new App\Setari\Repository($db))->get('landing_titlu');
-    $vechiEmail = (new App\Setari\Repository($db))->get('contact_email_destinatar');
     $r = cerere('POST', '/admin/setari', ['_csrf' => 'abc', 'contact_email_destinatar' => 'x@y.ro', 'landing_titlu' => 'Titlu test', 'landing_text' => 't', 'footer_text' => 'f']);
     ok('POST setari => 302', $r->getStatusCode() === 302);
     ok('  valoarea salvată', (new App\Setari\Repository($db))->get('landing_titlu') === 'Titlu test');
-    (new App\Setari\Repository($db))->set('landing_titlu', $vechi);
-    // Restaurăm exact ce era înainte, nu o valoare hard-codată: altfel testul ar
-    // rescrie în tăcere setarea reală a sitului pe care rulează.
-    (new App\Setari\Repository($db))->set('contact_email_destinatar', $vechiEmail);
+    // Restaurarea (exact ce era înainte, nu valori hard-codate) se face în `finally`.
 
     // Utilizatori: adaugă => cont fără parolă + email cu link
     $dim0 = is_file($log) ? filesize($log) : 0;
@@ -120,6 +121,8 @@ try {
     ok('GET mesaje listează mesajul', $r->getStatusCode() === 200 && str_contains(corp($r), "Mesaj test $uid"));
     $pdo->exec("DELETE FROM mesaje_contact WHERE id = $mid");
 } finally {
+    $restaurare = new App\Setari\Repository($db);
+    foreach ($setariVechi as $cheie => $valoare) { $restaurare->set($cheie, $valoare); }
     $pdo->exec('DELETE FROM utilizatori WHERE email = ' . $pdo->quote($email2));
     $pdo->exec("DELETE FROM utilizatori WHERE id = $uid");
     $pdo->exec("DELETE FROM login_incercari WHERE scope = 'parola'");

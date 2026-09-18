@@ -103,5 +103,15 @@ final class Bootstrap
         // Scope separat de 'admin': un atac pe „parolă uitată" nu trebuie să
         // blocheze login-ul normal de pe același IP, și invers.
         $container['parola_throttle'] = new Admin\LoginThrottle($container['db'], 'parola');
+
+        if (($container['settings']['db_wp']['name'] ?? '') !== '') {
+            $container['legacy'] = static function () use ($container): Migrare\Legacy {
+                $c = $container['settings']['db_wp'];
+                $pdo = new \PDO(sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $c['host'], $c['port'], $c['name']), $c['user'], $c['pass'], [
+                    \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION, \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC, \PDO::ATTR_EMULATE_PREPARES => false,
+                ]);
+                return new Migrare\Legacy($pdo, (string) $c['prefix']);
+            };
+        }
     }
 }

@@ -18,5 +18,8 @@
         "optimize-autoloader": true,
         "sort-packages": true,
         "platform": { "php": "8.1.10" }
+    },
+    "require-dev": {
+        "smalot/pdfparser": "^2.10"
     }
 }

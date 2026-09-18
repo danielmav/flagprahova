@@ -26,3 +26,15 @@ Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`. Planur
 - „Parolă uitată” are prag fix de 1500 ms pe răspuns, indiferent dacă emailul există, ca să nu scurgă prin timing dacă un cont e înregistrat.
 - Hook-ul gitleaks are `.gitleaksignore` pentru `assets/vendor/quill/quill.min.js` (fals pozitiv, cod minificat).
 - `router.php` e gitignored (necesar doar pentru PHP built-in server local); la un clone nou, copiază-l din `pestelocal`.
+
+## Migrare din WordPress
+
+- Sursa e baza WP veche `flagprahova_wp_old` (`DB_WP_*` în `.env`, read-only, doar pentru scripturile de migrare).
+- Ordine: `import_fisiere.php --zip=...` (atașamente → `fisiere/AAAA/LL/`, sare miniaturile WP și pluginurile) →
+  `migrate_wp.php` (funcția `migreaza()`: arborele 2014-2020, meniul fix 2021-2027, galeriile Cooperare, Acasă) →
+  `verifica_migrare.php` (funcția `verifica()`: documente fără fișier, pagini goale, galerii fără imagini, exit 1 dacă lipsesc fișiere, exit 2 dacă există alte probleme).
+- Idempotență pe `legacy_id` (`meniu`) / `legacy_url` (`fisiere`): re-rularea oricărui script nu duplică rânduri; `migrate_wp.php` actualizează, nu re-creează.
+- `Harta::SET_2021` decide ce intrări vechi trec în secțiunea 2021-2027; schimbarea ei mută automat intrările la următoarea migrare.
+- `reset_continut.php --da` rulează DOAR cu `APP_ENV=dev`: șterge galerii/meniu/fișiere și reface `setari` din `seed.php`. Fișierele de pe disc NU se șterg — `import_fisiere.php` le (re)înregistrează după reset fără să le rescrie (verifică potrivirea pe conținut, nu doar pe nume, ca să nu creeze dubluri „-2”).
+- URL-urile WP pot conține spații DUBLE (`%20%20`, ex. `2019/06/anunt prelungire  apel M1.pdf`). `Legacy::normalizeazaUrl()` face doar `trim` + `rawurldecode`, NU colapsează spațiile: altfel potrivirea cu `fisiere.legacy_url` cade și documentele (334, 423) se pierd tăcut.
+- `tests/migrare_wp_test.php` rulează pe baza REALĂ și șterge doar rândurile `legacy_id` apărute în timpul testului; se rulează fie ÎNAINTE de migrarea reală, fie DUPĂ un `reset_continut.php`.
