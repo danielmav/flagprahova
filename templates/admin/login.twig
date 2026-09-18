@@ -5,6 +5,7 @@
     <div class="card shadow-sm adm-login__card">
         <div class="card-body">
             <h1 class="h4 mb-3">FLAG Prahova · administrare</h1>
+            {% if ok|default(null) == 'parola' %}<div class="alert alert-success" role="alert">Parola a fost setată. Autentifică-te.</div>{% endif %}
             {% if eroare %}<div class="alert alert-danger" role="alert">{{ eroare }}</div>{% endif %}
             <form method="post" action="{{ base }}{{ admin_path }}/login">
                 <input type="hidden" name="_csrf" value="{{ csrf }}">

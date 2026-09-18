@@ -1,0 +1,31 @@
+{% extends 'admin/layout.twig' %}
+{% block title %}Setări{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Setări</h1>
+
+<form class="card card-body" method="post" action="{{ base }}{{ admin_path }}/setari">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+
+    <div class="mb-3">
+        <label class="form-label" for="f-contact">Emailul care primește mesajele din formularul de contact</label>
+        <input class="form-control" id="f-contact" type="email" name="contact_email_destinatar" value="{{ valori.contact_email_destinatar|default('') }}">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="f-landing-titlu">Titlul paginii de intrare</label>
+        <input class="form-control" id="f-landing-titlu" type="text" name="landing_titlu" value="{{ valori.landing_titlu|default('') }}">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="f-landing-text">Textul de sub titlu</label>
+        <textarea class="form-control" id="f-landing-text" name="landing_text" rows="3">{{ valori.landing_text|default('') }}</textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="f-footer">Textul din subsol (disclaimer)</label>
+        <textarea class="form-control" id="f-footer" name="footer_text" rows="3">{{ valori.footer_text|default('') }}</textarea>
+    </div>
+
+    <div><button class="btn btn-primary" type="submit">Salvează</button></div>
+</form>
+{% endblock %}

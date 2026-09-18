@@ -32,7 +32,11 @@ final class LoginController
         if ($this->auth->check()) {
             return $this->redirect($response);
         }
-        return $this->render($response, 'admin/login.twig', ['eroare' => null, 'email' => '']);
+        // Venit din fluxul de setare a parolei: confirmăm explicit, altfel
+        // omul care tocmai și-a ales parola aterizează pe un login gol și nu
+        // știe dacă a mers.
+        $ok = ($request->getQueryParams()['ok'] ?? '') === 'parola' ? 'parola' : null;
+        return $this->render($response, 'admin/login.twig', ['eroare' => null, 'email' => '', 'ok' => $ok]);
     }
 
     public function submit(Request $request, Response $response): Response

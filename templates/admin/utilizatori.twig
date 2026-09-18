@@ -1,0 +1,57 @@
+{% extends 'admin/layout.twig' %}
+{% block title %}Utilizatori{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Utilizatori</h1>
+
+<form class="card card-body mb-3" method="post" action="{{ base }}{{ admin_path }}/utilizatori/adauga">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <h2 class="h6 mb-3">Adaugă utilizator</h2>
+    <div class="row g-2 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label" for="f-email">Email</label>
+            <input class="form-control" id="f-email" type="email" name="email" required>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="f-nume">Nume</label>
+            <input class="form-control" id="f-nume" type="text" name="nume">
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary w-100" type="submit">Creează și trimite link</button>
+        </div>
+    </div>
+    <p class="form-text mb-0">Contul se creează fără parolă: destinatarul își alege singur parola din linkul primit pe email.</p>
+</form>
+
+<div class="table-responsive">
+<table class="table table-hover align-middle adm-table">
+    <thead><tr><th>Nume</th><th>Email</th><th>Stare</th><th class="d-none d-md-table-cell">Ultimul login</th><th></th></tr></thead>
+    <tbody>
+    {% for u in lista %}
+        <tr>
+            <td>{{ u.nume ?: '—' }}</td>
+            <td><a href="mailto:{{ u.email }}">{{ u.email }}</a></td>
+            <td>
+                {% if u.are_parola %}<span class="badge text-bg-success">Parolă setată</span>
+                {% else %}<span class="badge text-bg-warning">Fără parolă — așteaptă linkul</span>{% endif %}
+            </td>
+            <td class="d-none d-md-table-cell small">{{ u.ultimul_login ? u.ultimul_login|date('d.m.Y H:i') : '—' }}</td>
+            <td class="text-end text-nowrap">
+                <form class="d-inline" method="post" action="{{ base }}{{ admin_path }}/utilizatori/{{ u.id }}/trimite-link">
+                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                    <button class="btn btn-sm btn-outline-secondary" type="submit">Trimite link de parolă</button>
+                </form>
+                {% if utilizator is null or u.id != utilizator.id %}
+                <form class="d-inline" method="post" action="{{ base }}{{ admin_path }}/utilizatori/{{ u.id }}/sterge" onsubmit="return confirm('Ștergi contul „{{ u.email|e('js') }}”?')">
+                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Șterge</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% else %}
+        <tr><td colspan="5" class="text-muted">Niciun utilizator.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

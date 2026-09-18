@@ -1,0 +1,24 @@
+{% extends 'admin/layout.twig' %}
+{% block title %}Setează parola{% endblock %}
+{% block content %}
+<div class="adm-login">
+    <div class="card shadow-sm adm-login__card">
+        <div class="card-body">
+            <h1 class="h4 mb-3">Setează parola</h1>
+            {% if eroare %}<div class="alert alert-danger" role="alert">{{ eroare }}</div>{% endif %}
+            <form method="post" action="{{ base }}{{ admin_path }}/parola/{{ token }}">
+                <input type="hidden" name="_csrf" value="{{ csrf }}">
+                <div class="mb-3">
+                    <label class="form-label" for="f-parola">Parolă nouă (cel puțin 10 caractere)</label>
+                    <input class="form-control" id="f-parola" type="password" name="parola" minlength="10" required autocomplete="new-password" autofocus>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="f-parola2">Repetă parola</label>
+                    <input class="form-control" id="f-parola2" type="password" name="parola2" minlength="10" required autocomplete="new-password">
+                </div>
+                <button class="btn btn-primary w-100" type="submit">Setează parola</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

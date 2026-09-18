@@ -92,5 +92,16 @@ final class Bootstrap
         $container['fisiere']        = new Fisiere\Repository($container['db']);
         $container['galerie']        = new Meniu\GalerieRepository($container['db']);
         $container['upload']         = new Fisiere\Upload($container['settings']['upload']['dir'], $container['settings']['upload']['max_bytes']);
+        $container['setari']         = new Setari\Repository($container['db']);
+        $container['mailer']         = new Mail\Mailer(
+            $container['settings']['mail'],
+            $root . '/storage/logs/mail.log',
+            (string) $container['settings']['app']['env']
+        );
+        $container['utilizatori']    = new Admin\UtilizatoriRepository($container['db']);
+        $container['parola_tokens']  = new Admin\PasswordTokenRepository($container['db']);
+        // Scope separat de 'admin': un atac pe „parolă uitată" nu trebuie să
+        // blocheze login-ul normal de pe același IP, și invers.
+        $container['parola_throttle'] = new Admin\LoginThrottle($container['db'], 'parola');
     }
 }

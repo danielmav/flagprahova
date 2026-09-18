@@ -5,6 +5,9 @@ use App\Admin\AuthMiddleware;
 use App\Admin\FisiereController;
 use App\Admin\LoginController;
 use App\Admin\MeniuController;
+use App\Admin\MesajeController;
+use App\Admin\SetariController;
+use App\Admin\UtilizatoriController;
 use Slim\App;
 use Slim\Views\Twig;
 
@@ -27,6 +30,10 @@ return function (App $app, Twig $twig, array $container): void {
     $app->post($adminPath . '/login', fn($rq, $rs) => (new LoginController($twig, $container))->submit($rq, $rs));
     $app->post($adminPath . '/logout', fn($rq, $rs) => (new LoginController($twig, $container))->logout($rq, $rs));
 
+    // În afara grupului, ca login-ul: cine și-a uitat parola nu are sesiune.
+    $app->map(['GET', 'POST'], $adminPath . '/parola-uitata', fn($rq, $rs) => (new UtilizatoriController($twig, $container))->parolaUitata($rq, $rs));
+    $app->map(['GET', 'POST'], $adminPath . '/parola/{token:[a-f0-9]{64}}', fn($rq, $rs, $a) => (new UtilizatoriController($twig, $container))->parola($rq, $rs, $a));
+
     $app->group($adminPath, function ($g) use ($twig, $container) {
         $g->get('', fn($rq, $rs) => (new LoginController($twig, $container))->dashboard($rq, $rs));
 
@@ -44,6 +51,18 @@ return function (App $app, Twig $twig, array $container): void {
         $g->post('/meniu/reordoneaza',        fn($rq, $rs) => $mc()->reordoneaza($rq, $rs));
         $g->get('/meniu/{id:[0-9]+}',         fn($rq, $rs, $a) => $mc()->editeaza($rq, $rs, $a));
         $g->post('/meniu/{id:[0-9]+}/sterge', fn($rq, $rs, $a) => $mc()->sterge($rq, $rs, $a));
-        // Task 8+: setari, utilizatori, mesaje
+
+        $sc = fn() => new SetariController($twig, $container);
+        $g->get('/setari',  fn($rq, $rs) => $sc()->form($rq, $rs));
+        $g->post('/setari', fn($rq, $rs) => $sc()->salveaza($rq, $rs));
+
+        $uc = fn() => new UtilizatoriController($twig, $container);
+        $g->get('/utilizatori',                           fn($rq, $rs) => $uc()->index($rq, $rs));
+        $g->post('/utilizatori/adauga',                   fn($rq, $rs) => $uc()->adauga($rq, $rs));
+        $g->post('/utilizatori/{id:[0-9]+}/trimite-link', fn($rq, $rs, $a) => $uc()->trimiteLinkActiune($rq, $rs, $a));
+        $g->post('/utilizatori/{id:[0-9]+}/sterge',       fn($rq, $rs, $a) => $uc()->sterge($rq, $rs, $a));
+
+        $msg = fn() => new MesajeController($twig, $container);
+        $g->get('/mesaje', fn($rq, $rs) => $msg()->index($rq, $rs));
     })->add(new AuthMiddleware($container['auth'], $adminPath, $basePath));
 };
