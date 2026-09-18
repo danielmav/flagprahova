@@ -1,0 +1,11 @@
+{# Firul Ariadnei. `.fp-breadcrumb` e o LISTĂ în site.css (`li + li::before` desenează
+   separatorul „›”), deci markup-ul e <ol>/<li>, nu text între linkuri. #}
+<nav aria-label="Ești aici">
+    <ol class="fp-breadcrumb">
+        <li><a href="{{ base }}/{{ sectiune.slug }}/">{{ sectiune.titlu }}</a></li>
+        {% for s in stramosi %}
+            <li>{% if s.href != '' and s.tip != 'document' %}<a href="{{ s.href }}">{{ s.titlu }}</a>{% else %}<span>{{ s.titlu }}</span>{% endif %}</li>
+        {% endfor %}
+        <li><span aria-current="page">{{ nod.titlu }}</span></li>
+    </ol>
+</nav>

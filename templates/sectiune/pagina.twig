@@ -1,0 +1,16 @@
+{% extends 'sectiune/_baza.twig' %}
+{% block corp %}
+<div class="fp-prose">{{ rand.continut_html|raw }}</div>
+{% if galerii %}
+{# Galeriile-copil, sub conținut: doar prima e deschisă, restul se încarcă la click
+   (imaginile au `loading="lazy"`), ca o pagină cu 14 galerii să rămână ușoară. #}
+<div class="fp-acordeon">
+    {% for g in galerii %}
+    <details class="fp-acordeon__item"{% if loop.first %} open{% endif %}>
+        <summary><span>{{ g.titlu }}</span><span class="fp-acordeon__meta">{{ g.imagini|length }} {{ g.imagini|length == 1 ? 'imagine' : 'imagini' }}</span></summary>
+        <div class="fp-acordeon__corp">{% include '_galerie_grila.twig' with {'imagini': g.imagini} only %}</div>
+    </details>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

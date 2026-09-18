@@ -3,9 +3,47 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}{{ titlu|default('FLAG Prahova') }}{% endblock %}</title>
+    {# `og_image` e o VARIABILĂ, nu un bloc: un bloc s-ar randa și în pagină.
+       Paginile care vor altă imagine o pasează din controller. #}
+    {% set og_image = og_image|default('/assets/img/og-default.png') %}
+    {% set canonical = url_public(canonical_path) %}
+    {% set og_img = url_public(og_image) %}
+    <title>{% block title %}Asociația FLAG Prahova{% endblock %}</title>
+    <meta name="description" content="{% block description %}{{ setari.landing_text|default('') }}{% endblock %}">
+    <link rel="canonical" href="{{ canonical }}">
+    <meta name="robots" content="{% block meta_robots %}index,follow,max-image-preview:large{% endblock %}">
+    <meta name="theme-color" content="#272B5C">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:site_name" content="Asociația FLAG Prahova">
+    <meta property="og:locale" content="ro_RO">
+    <meta property="og:title" content="{{ block('title') }}">
+    <meta property="og:description" content="{{ block('description') }}">
+    <meta property="og:url" content="{{ canonical }}">
+    <meta property="og:image" content="{{ og_img }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ block('title') }}">
+    <meta name="twitter:description" content="{{ block('description') }}">
+    <meta name="twitter:image" content="{{ og_img }}">
+    <link rel="icon" href="{{ base }}/assets/img/logo/flag-prahova.png">
+    <link rel="stylesheet" href="{{ base }}/assets/vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ base }}/assets/css/fonts.css">
+    <link rel="stylesheet" href="{{ base }}/assets/css/site.css">
+    {% block jsonld %}{% endblock %}
 </head>
 <body>
+{% include '_header.twig' %}
+<main id="continut">
 {% block content %}{% endblock %}
+</main>
+{% include '_footer.twig' %}
+<div class="fp-lightbox" hidden role="dialog" aria-modal="true" aria-label="Imagine mărită">
+    <button type="button" data-inchide aria-label="Închide">{% include '_icon.twig' with {'nume': 'inchide'} only %}</button>
+    <button type="button" data-prev aria-label="Imaginea anterioară">{% include '_icon.twig' with {'nume': 'stanga'} only %}</button>
+    <img src="" alt="">
+    <button type="button" data-next aria-label="Imaginea următoare">{% include '_icon.twig' with {'nume': 'dreapta'} only %}</button>
+    <p class="fp-lightbox__legenda"></p>
+</div>
+<script src="{{ base }}/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="{{ base }}/assets/js/site.js"></script>
 </body>
 </html>

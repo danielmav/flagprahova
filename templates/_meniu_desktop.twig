@@ -1,0 +1,29 @@
+{# Meniu recursiv: nivel 1 = bara, nivel 2 = dropdown, nivel ≥3 = submeniu lateral.
+   Nivelul 1 cu copii NU are data-bs-toggle="dropdown": deschiderea e pe hover/focus
+   din CSS, ca linkul părinte să rămână navigabil; pe touch o face site.js, care se
+   leagă de `.fp-has-sub > a` — de aceea clasa e pusă la orice nivel cu copii.
+   Chevronul îl desenează CSS-ul (`.fp-has-sub > a::after`), nu șablonul.
+
+   Liste lungi: un dropdown de nivel 2 cu peste 12 intrări se derulează (vezi
+   `.fp-nav .dropdown-menu` în site.css), iar `overflow` ar tăia un flyout lateral.
+   Atunci nivelul 3 se randează INLINE, indentat sub părinte (`fp-submenu--inline`),
+   fără hover: li-ul primește `fp-has-sub-inline`, nu `fp-has-sub`, deci nici CSS-ul
+   de flyout, nici handler-ul de touch din site.js nu se mai aplică. #}
+{% set inline = inline|default(false) %}
+{% set copii_inline = inline or (nivel == 2 and noduri|length > 12) %}
+<ul class="{% if nivel == 1 %}fp-nav fp-nav__lista{% elseif nivel == 2 %}dropdown-menu{% elseif inline %}fp-submenu fp-submenu--inline{% else %}dropdown-menu fp-submenu{% endif %}">
+{% for n in noduri %}
+    {% set are = n.copii|length > 0 %}
+    {% set clasa_link = nivel == 1 ? 'fp-nav__link' : 'dropdown-item' %}
+    {% set clasa_li = [nivel == 1 ? 'fp-nav__item' : null, are ? (copii_inline ? 'fp-has-sub-inline' : 'fp-has-sub') : null, are and nivel == 1 ? 'dropdown' : null]|filter(c => c)|join(' ') %}
+    <li{% if clasa_li %} class="{{ clasa_li }}"{% endif %}>
+        {% if n.href == '' %}
+            {# Document fără fișier atașat: text, nu link mort. #}
+            <span class="{{ clasa_link }} is-inactiv">{{ n.titlu }}</span>
+        {% else %}
+            <a class="{{ clasa_link }}{% if n.id in activ %} is-activ{% endif %}" href="{{ n.href }}"{% if n.extern %} target="_blank" rel="noopener noreferrer"{% endif %}{% if n.id in activ %} aria-current="page"{% endif %}>{{ n.titlu }}</a>
+        {% endif %}
+        {% if are %}{% include '_meniu_desktop.twig' with {'noduri': n.copii, 'nivel': nivel + 1, 'activ': activ, 'inline': copii_inline} only %}{% endif %}
+    </li>
+{% endfor %}
+</ul>

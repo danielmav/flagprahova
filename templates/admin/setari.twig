@@ -26,6 +26,21 @@
         <textarea class="form-control" id="f-footer" name="footer_text" rows="3">{{ valori.footer_text|default('') }}</textarea>
     </div>
 
+    <div class="mb-3">
+        <label class="form-label" for="f-contact-adresa">Adresa (apare în subsol și în Contact rapid)</label>
+        <input class="form-control" id="f-contact-adresa" type="text" name="contact_adresa" value="{{ valori.contact_adresa|default('') }}">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="f-contact-telefon">Telefon</label>
+        <input class="form-control" id="f-contact-telefon" type="text" name="contact_telefon" value="{{ valori.contact_telefon|default('') }}">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="f-contact-email-public">Email public</label>
+        <input class="form-control" id="f-contact-email-public" type="text" name="contact_email_public" value="{{ valori.contact_email_public|default('') }}">
+    </div>
+
     <div><button class="btn btn-primary" type="submit">Salvează</button></div>
 </form>
 {% endblock %}

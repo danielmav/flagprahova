@@ -2,7 +2,7 @@
 
 Slim 4 + Twig + PDO, PHP ≥ 8.1, fără build step; Bootstrap/Quill/SortableJS vendorate în `assets/vendor/`.
 Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`. Planuri: `docs/superpowers/plans/`.
-Stadiu: Plan 1 (admin) și Plan 2 (migrare WP) mergeuite în `main` (2026-09-18). Urmează Plan 3 = sit public (spec §4, §6; galeriile-copil ale unei pagini se randează sub conținut — Cooperare se termină cu „GALERII FOTO”), Plan 4 = staging/lansare.
+Stadiu: Plan 1 (admin) și Plan 2 (migrare WP) mergeuite în `main` (2026-09-18). Plan 3 (sit public) gata pe branch-ul `plan-3-sit-public`; urmează Plan 4 = staging/lansare.
 Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO) sunt în `~/.claude/CLAUDE.md`.
 
 ## Server / deploy
@@ -15,7 +15,7 @@ Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO
 - MySQL: `C:/laragon/bin/mysql/mysql-8.0.30-winx64/bin/mysql.exe -u root --default-character-set=utf8mb4 flagprahova`. NU pasa diacritice pe linia de comandă.
 - Migrare/seed: `php database/migrate.php && php database/seed.php` (idempotente). Cont: `php database/create_admin.php email nume parola`.
 - Teste: `for t in tests/*_test.php; do php "$t" || echo "FAIL: $t"; done` — rulează în proces pe baza REALĂ `flagprahova`, indiferent de conținutul ei; fiecare test își șterge/restaurează datele în `finally`. Rulează suita de DOUĂ ORI la rând ca dovadă că nu lasă urme (apoi `verifica_migrare.php`).
-- Capturi: `node tests/capturi.mjs` → `storage/shots/`. Chrome headless are lățime minimă ~500 px → captura „mobil” la 390 px iese tăiată (nu e bug CSS); paginile autentificate se capturează cu Puppeteer (nu există încă).
+- Capturi: `node tests/capturi.mjs` → `storage/shots/` (landing, acasă 2021/2014, pagină, dosar, contact, 404, login admin — desktop 1366 și „mobil” 390). Chrome headless are lățime minimă ~500 px → captura „mobil” la 390 px iese tăiată (nu e bug CSS); paginile autentificate se capturează cu Puppeteer (nu există încă).
 
 ## Convenții
 - Fluxul de lucru: brainstorming → spec → plan (`docs/superpowers/plans/`) → execuție cu subagenți (`superpowers:subagent-driven-development`), ledger în `.superpowers/sdd/<plan>/progress.md` (gitignored). Modele: sonnet pentru task-uri mecanice, opus pentru integrare, fable doar la revizia finală.
@@ -36,7 +36,14 @@ Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO
 - `PasswordTokenRepository::issue($uid, $invalideazaVechi)` + `pastreazaDoar()`: la re-invitare/parolă-uitată, invitația/tokenul vechi rămâne valabil până când emailul nou chiar pleacă (nu se invalidează prematur dacă trimiterea eșuează).
 - „Parolă uitată” are prag fix de 1500 ms pe răspuns, indiferent dacă emailul există, ca să nu scurgă prin timing dacă un cont e înregistrat.
 - Hook-ul gitleaks are `.gitleaksignore` pentru `assets/vendor/quill/quill.min.js` (fals pozitiv, cod minificat).
+- Rutele publice stau la finalul lui `src/Routes.php` (`/`, `/{perioada}/`, `/{perioada}/{slug}`, contact POST, `/fisiere/mini/...`, `/sitemap.xml`, `/robots.txt`); datele comune de layout vin din `Public\Context` (`sectiuni/sectiune/arbore/gaseste/href/variabile/base`), o dată per cerere.
+- Fonturile (DM Serif Display, DM Sans) sunt self-hostate în `assets/fonts/` + `assets/css/fonts.css`; se (re)descarcă cu `php scripts/descarca_fonturi.php`.
+- Setările de contact folosite public: `contact_adresa`, `contact_telefon`, `contact_email_public` (separate de `contact_email_destinatar`, unde ajung mesajele din formular).
 - `router.php` e gitignored (necesar doar pentru PHP built-in server local); la un clone nou, copiază-l din `pestelocal`.
+- `APP_URL` INCLUDE `BASE_PATH` (staging: `APP_URL=https://flagprahova.ro/nou`, `BASE_PATH=/nou`), iar href-urile din `Context` poartă deja baza → URL-urile absolute (canonical, OG, JSON-LD, sitemap) se compun DOAR cu `Context::urlPublic()` / funcția Twig `url_public()`, care scot baza din cale înainte de `app.url`; nu concatena `app.url ~ …` în șabloane.
+- Dropdown-urile de desktop se plafonează cu `:has()` (Firefox ≥ 121 / Safari ≥ 15.4; în browserele vechi se pierde doar plafonul de derulare, nu și flyout-urile), iar listele de nivel 2 cu peste 12 intrări își randează nivelul 3 INLINE (`fp-submenu--inline`, li cu `fp-has-sub-inline`), nu ca flyout lateral — altfel `overflow` ar tăia submeniul.
+- Formularul de contact are throttle de 5 mesaje/oră/IP (`mesaje_contact.ip_hash`, `trimis_la`); peste prag răspunde cu același 302 „succes" tăcut ca la bot, fără salvare și fără mail. Fără `IP_SALT`, `ip_hash()` e null și throttle-ul se sare.
+- Miniaturile galeriilor se generează la cerere în `fisiere/mini/{480|1600}/…` (`Fisiere\Miniatura`), gitignored ca tot `fisiere/`; `reset_continut.php` le șterge.
 
 ## Migrare din WordPress
 
