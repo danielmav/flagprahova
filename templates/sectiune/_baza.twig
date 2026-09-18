@@ -1,0 +1,33 @@
+{# Scheletul comun al intrărilor de conținut: breadcrumb, h1, sidebar, JSON-LD.
+   Șabloanele concrete umplu doar `{% block corp %}`. #}
+{% extends 'layout.twig' %}
+{% block title %}{{ nod.titlu }} · {{ sectiune.titlu }}{% endblock %}
+{% block description %}{{ nod.titlu }} — {{ sectiune.titlu }}, Asociația FLAG Prahova.{% endblock %}
+{% block jsonld %}
+{# JSON-LD-ul se construiește ca hash Twig și se serializează o singură dată: interpolat
+   direct în `<script>` ar trece prin autoescape-ul HTML, iar un `&` sau `"` dintr-un titlu
+   ar ieși ca entitate și ar strica JSON-ul. #}
+{% set items = [{'@type': 'ListItem', 'position': 1, 'name': sectiune.titlu, 'item': app.url ~ base ~ '/' ~ sectiune.slug ~ '/'}] %}
+{% for s in stramosi %}
+    {% set it = {'@type': 'ListItem', 'position': loop.index + 1, 'name': s.titlu} %}
+    {% if s.href != '' %}{% set it = it|merge({'item': s.href starts with 'http' ? s.href : app.url ~ s.href}) %}{% endif %}
+    {% set items = items|merge([it]) %}
+{% endfor %}
+{% set items = items|merge([{'@type': 'ListItem', 'position': stramosi|length + 2, 'name': nod.titlu, 'item': app.url ~ canonical_path}]) %}
+<script type="application/ld+json">
+{# JSON_HEX_TAG: un `</script>` dintr-un titlu nu poate închide elementul. #}
+{{ {'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': items}|json_encode(constant('JSON_HEX_TAG'))|raw }}
+</script>
+{% endblock %}
+{% block content %}
+<div class="container fp-pagina">
+    {% include '_breadcrumb.twig' with {'sectiune': sectiune, 'stramosi': stramosi, 'nod': nod} only %}
+    <div class="row g-5">
+        <div class="col-lg-8">
+            <h1>{{ nod.titlu }}</h1>
+            {% block corp %}{% endblock %}
+        </div>
+        <aside class="col-lg-4">{% include '_sidebar.twig' with {'ramura': ramura, 'activ': activ, 'setari': setari} only %}</aside>
+    </div>
+</div>
+{% endblock %}

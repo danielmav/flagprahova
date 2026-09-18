@@ -1,0 +1,9 @@
+{% extends 'sectiune/_baza.twig' %}
+{% block corp %}
+<div class="fp-prose">{{ rand.continut_html|raw }}</div>
+<section class="fp-form mt-5" id="formular">
+    <h2 class="h4">Trimite-ne un mesaj</h2>
+    {# Task 6 umple blocul cu formularul real (CSRF, validare, honeypot). #}
+    {% block formular %}{% endblock %}
+</section>
+{% endblock %}

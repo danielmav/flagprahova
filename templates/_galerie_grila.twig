@@ -1,0 +1,8 @@
+{# Grila unei galerii. `site.js` leagă lightbox-ul de `.fp-galerie .fp-galerie__item[data-full]`. #}
+<div class="fp-galerie">
+{% for i in imagini %}
+    <a class="fp-galerie__item" href="{{ base }}{{ fisiere_url }}/{{ i.cale }}" data-full="{{ mini(i.cale, 1600) }}" data-legenda="{{ i.legenda }}">
+        <img src="{{ mini(i.cale, 480) }}" alt="{{ i.legenda ?: i.nume_afisat }}" loading="lazy" width="480" height="360">
+    </a>
+{% endfor %}
+</div>

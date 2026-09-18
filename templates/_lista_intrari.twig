@@ -1,0 +1,14 @@
+{# Lista de intrări a unui dosar: dosarele cu copii devin grupuri cu titlu, restul
+   sunt rânduri de document. Recursiv, cu titlul limitat la h4. #}
+<div class="fp-lista">
+{% for n in noduri %}
+    {% if n.tip == 'dosar' and n.copii|length %}
+        <section class="fp-lista__grup">
+            <h{{ nivel }} class="fp-lista__titlu"><a href="{{ n.href }}">{{ n.titlu }}</a></h{{ nivel }}>
+            {% include '_lista_intrari.twig' with {'noduri': n.copii, 'nivel': min(nivel + 1, 4)} only %}
+        </section>
+    {% else %}
+        {% include '_document_rand.twig' with {'n': n} only %}
+    {% endif %}
+{% endfor %}
+</div>

@@ -68,4 +68,7 @@ return function (App $app, Twig $twig, array $container): void {
     $app->get('/', fn($rq, $rs) => $pc()->landing($rq, $rs))->setName('home');
     $app->get('/{perioada:[0-9]{4}-[0-9]{4}}',  fn($rq, $rs, $a) => $pc()->slash($rq, $rs, $a));
     $app->get('/{perioada:[0-9]{4}-[0-9]{4}}/', fn($rq, $rs, $a) => $pc()->acasa($rq, $rs, $a));
+    // Regexul de perioadă garantează că ruta nu umbrește /sitemap.xml, /robots.txt,
+    // /admin/... sau /fisiere/... .
+    $app->get('/{perioada:[0-9]{4}-[0-9]{4}}/{slug:[a-z0-9-]+}', fn($rq, $rs, $a) => $pc()->pagina($rq, $rs, $a));
 };

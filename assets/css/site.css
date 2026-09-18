@@ -269,7 +269,8 @@ img { max-width: 100%; }
 .fp-mobil__lista .fp-mobil__lista { padding-left: .9rem; }
 
 .fp-mobil__link,
-.fp-mobil summary {
+.fp-mobil summary,
+.fp-sidebar__nav summary {
   display: block;
   padding: .6rem 0;
   font-size: 15px;
@@ -283,18 +284,22 @@ img { max-width: 100%; }
 
 .fp-mobil__link--parinte { font-weight: 400; color: var(--fp-blue); }
 
-.fp-mobil summary { cursor: pointer; list-style: none; }
+.fp-mobil summary,
+.fp-sidebar__nav summary { cursor: pointer; list-style: none; }
 
-.fp-mobil summary::-webkit-details-marker { display: none; }
+.fp-mobil summary::-webkit-details-marker,
+.fp-sidebar__nav summary::-webkit-details-marker { display: none; }
 
-.fp-mobil summary::after {
+.fp-mobil summary::after,
+.fp-sidebar__nav summary::after {
   content: "›";
   display: inline-block;
   float: right;
   color: var(--fp-muted);
 }
 
-.fp-mobil details[open] > summary::after { transform: rotate(90deg); }
+.fp-mobil details[open] > summary::after,
+.fp-sidebar__nav details[open] > summary::after { transform: rotate(90deg); }
 
 .fp-mobil__eticheta { margin: 1.5rem 0 .5rem; font-size: 13px; color: var(--fp-muted); }
 
@@ -708,6 +713,18 @@ img { max-width: 100%; }
 
 .fp-form .invalid-feedback { font-size: 13px; }
 
+/* --- Pagina interioară --------------------------------------------------- */
+.fp-pagina { padding: 2.5rem 0 4rem; }
+
+/* --- Lista de intrări a unui dosar -------------------------------------- */
+.fp-lista__grup { margin-top: 2rem; }
+
+.fp-lista__grup:first-child { margin-top: 0; }
+
+.fp-lista__titlu { margin-bottom: .1rem; font-size: 1.15rem; }
+
+.fp-lista__titlu a { color: var(--fp-navy); }
+
 /* --- Acordeonul galeriilor ---------------------------------------------- */
 .fp-acordeon { margin-top: 2.5rem; border-top: 1px solid var(--fp-border); }
 
@@ -738,6 +755,8 @@ img { max-width: 100%; }
 }
 
 .fp-acordeon details[open] summary::after { transform: rotate(-90deg); }
+
+.fp-acordeon__meta { font-size: 13px; font-weight: 400; color: var(--fp-muted); white-space: nowrap; }
 
 .fp-acordeon__corp { padding-bottom: 1.5rem; }
 

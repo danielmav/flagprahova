@@ -1,0 +1,15 @@
+{# Coloana laterală: navigarea ramurii curente (`_meniu_mobil.twig` refolosit) + contact rapid. #}
+<div class="fp-sidebar">
+    {% if ramura.copii|length %}
+    <nav class="fp-sidebar__nav" aria-label="În această secțiune">
+        <h2 class="fp-sidebar__titlu">{{ ramura.titlu }}</h2>
+        {% include '_meniu_mobil.twig' with {'noduri': ramura.copii, 'activ': activ} only %}
+    </nav>
+    {% endif %}
+    <div class="fp-contact-rapid">
+        <h2 class="fp-sidebar__titlu">Contact rapid</h2>
+        {% if setari.contact_adresa|default('') %}<p>{% include '_icon.twig' with {'nume': 'pin'} only %} {{ setari.contact_adresa }}</p>{% endif %}
+        {% if setari.contact_telefon|default('') %}<p>{% include '_icon.twig' with {'nume': 'telefon'} only %} <a href="tel:{{ setari.contact_telefon|replace({' ': ''}) }}">{{ setari.contact_telefon }}</a></p>{% endif %}
+        {% if setari.contact_email_public|default('') %}<p>{% include '_icon.twig' with {'nume': 'contact'} only %} <a href="mailto:{{ setari.contact_email_public }}">{{ setari.contact_email_public }}</a></p>{% endif %}
+    </div>
+</div>

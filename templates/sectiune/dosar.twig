@@ -1,0 +1,5 @@
+{% extends 'sectiune/_baza.twig' %}
+{% block corp %}
+{% if nod.copii is empty %}<p class="text-muted">Nu există încă documente în această secțiune.</p>
+{% else %}{% include '_lista_intrari.twig' with {'noduri': nod.copii, 'nivel': 2} only %}{% endif %}
+{% endblock %}

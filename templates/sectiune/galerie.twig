@@ -1,0 +1,5 @@
+{% extends 'sectiune/_baza.twig' %}
+{% block corp %}
+{% if imagini is empty %}<p class="text-muted">Galeria nu are încă imagini.</p>
+{% else %}{% include '_galerie_grila.twig' with {'imagini': imagini} only %}{% endif %}
+{% endblock %}
