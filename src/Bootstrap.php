@@ -88,5 +88,6 @@ final class Bootstrap
     {
         $container['auth']           = new Admin\Auth($container['db']);
         $container['login_throttle'] = new Admin\LoginThrottle($container['db'], 'admin');
+        $container['meniu']          = new Meniu\Repository($container['db']);
     }
 }
