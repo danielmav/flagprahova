@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace App\Migrare;
 
 use App\Support\Html;
-use DOMDocument;
 use DOMElement;
+use DOMDocument;
+use DOMNode;
+use DOMText;
 use DOMXPath;
 
 /**
@@ -18,6 +20,12 @@ final class Curata
     public const SPAM = '#ghostwriter|essay|paper[- ]?writ|payday|casino|brides|dating|hookup|cbd|resume[- ]help|loans?\b#i';
     public const SPAM_TEXT = '#ghostwriter|essay|paper writing|write my|payday|casino|brides|hookup|informationen angeordnet#i';
     private const DOMENII_PROPRII = ['flagprahova.ro', 'www.flagprahova.ro', 'youtube.com', 'www.youtube.com', 'youtu.be', 'www.youtube-nocookie.com'];
+
+    /** Etichete de bloc: între ele spațiile albe nu contează la serializare. */
+    private const BLOCURI = ['p', 'div', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'section', 'article', 'blockquote', 'iframe', 'figure', 'hr'];
+
+    /** Blocuri care pot conține alte blocuri; un candidat la spam care le conține e „ambalaj”, nu frunză. */
+    private const CONTAINERE = ['p', 'div', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'section', 'article', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
 
     /** @var callable(string):?string */
     private $rezolvaCale;
@@ -39,7 +47,7 @@ final class Curata
 
         // 1. Gutenberg
         $html = preg_replace('#<!--\s*/?wp:[^>]*-->#s', '', $html) ?? $html;
-        $html = preg_replace_callback('#<div class="wp-block-file">(.*?)</div>#s', static function (array $m): string {
+        $html = preg_replace_callback('#<div\b[^>]*class="[^"]*\bwp-block-file\b[^"]*"[^>]*>(.*?)</div>#s', static function (array $m): string {
             if (preg_match('#<a\b[^>]*href="([^"]+)"[^>]*>(.*?)</a>#s', $m[1], $a)) {
                 return '<p><a href="' . $a[1] . '">' . strip_tags($a[2]) . '</a></p>';
             }
@@ -78,23 +86,37 @@ final class Curata
             return ['html' => '', 'galerii' => $galerii, 'linkuri_rupte' => [], 'externe' => [], 'spam_eliminat' => 0];
         }
 
-        // 4. spam: linkuri, apoi blocuri
-        foreach (iterator_to_array($xp->query('.//a[@href]', $rad)) as $a) {
-            if (preg_match(self::SPAM, $a->getAttribute('href'))) {
-                $a->parentNode?->removeChild($a);
+        // 4a. Spam pe blocuri, ÎNAINTE de a scoate ancorele: altfel textul spam
+        // dispare odată cu ancora și blocul rămâne mutilat, dar viu.
+        foreach (iterator_to_array($xp->query('.//p|.//li|.//div', $rad)) as $el) {
+            /** @var DOMElement $el */
+            // Doar blocuri-frunză: un ambalaj cu blocuri înăuntru ar lua cu el
+            // și conținutul bun din jurul spamului.
+            if (!$this->atasat($el, $rad) || !$this->esteFrunza($el)) {
+                continue;
+            }
+            if (preg_match(self::SPAM_TEXT, $el->textContent)) {
+                $el->parentNode?->removeChild($el);
                 $spam++;
             }
         }
-        foreach (iterator_to_array($xp->query('.//p|.//li|.//div', $rad)) as $el) {
-            if ($el->parentNode !== null && preg_match(self::SPAM_TEXT, $el->textContent)) {
-                $el->parentNode->removeChild($el);
-                $spam++;
+        // 4b. Ancore spam rămase: scoatem linkul, păstrăm textul (poate fi un
+        // cuvânt legitim ancorat de spammer în mijlocul unei fraze reale).
+        foreach (iterator_to_array($xp->query('.//a[@href]', $rad)) as $a) {
+            /** @var DOMElement $a */
+            if (!$this->atasat($a, $rad) || !preg_match(self::SPAM, $a->getAttribute('href'))) {
+                continue;
             }
+            $this->inlocuiesteCuText($dom, $a, $a->textContent);
+            $spam++;
         }
 
         // 5–6. href/src
         foreach (iterator_to_array($xp->query('.//a[@href]|.//img[@src]', $rad)) as $el) {
             /** @var DOMElement $el */
+            if (!$this->atasat($el, $rad)) {
+                continue;
+            }
             $atr = $el->tagName === 'img' ? 'src' : 'href';
             $url = $el->getAttribute($atr);
             $cale = Legacy::caleDinUrl($url);
@@ -107,8 +129,9 @@ final class Curata
                     if ($el->tagName === 'img') {
                         $el->parentNode?->removeChild($el);
                     } else {
-                        $text = $dom->createTextNode($el->textContent);
-                        $el->parentNode?->replaceChild($text, $el);
+                        // `<a><img></a>` fără text: cădem pe alt/title, altfel
+                        // scoatem tot (ca să nu rămână un `<p></p>` gol).
+                        $this->inlocuiesteCuText($dom, $el, $this->textAncora($el));
                     }
                 }
                 continue;
@@ -128,16 +151,136 @@ final class Curata
             $h1->parentNode?->replaceChild($h2, $h1);
         }
 
+        // 8. Blocuri rămase goale după eliminări (ex. `<p><a><img></a></p>` cu
+        // fișier lipsă). În ordine inversă, ca să cadă și ambalajele.
+        $goale = iterator_to_array($xp->query('.//p|.//li|.//div|.//blockquote|.//h1|.//h2|.//h3|.//h4|.//h5|.//h6', $rad));
+        foreach (array_reverse($goale) as $el) {
+            /** @var DOMElement $el */
+            if (!$this->atasat($el, $rad) || trim($el->textContent) !== '') {
+                continue;
+            }
+            if ($el->getElementsByTagName('img')->length > 0 || $el->getElementsByTagName('iframe')->length > 0) {
+                continue;
+            }
+            $el->parentNode?->removeChild($el);
+        }
+
         $out = '';
-        foreach ($rad->childNodes as $c) { $out .= $dom->saveHTML($c); }
-        $out = preg_replace('/>\s+</', '><', trim($out)) ?? $out;
+        foreach ($rad->childNodes as $c) {
+            if ($c instanceof DOMElement || $c instanceof DOMText) { $out .= (string) $dom->saveHTML($c); }
+        }
 
         return [
-            'html'          => Html::curata($out),
+            // wpautop se aplică DUPĂ `Html::curata`: acesta despachetează
+            // `div`/`span`, expunând text care până atunci era învelit.
+            'html'          => $this->paragrafeaza(Html::curata($this->colapseazaSpatii(trim($out)))),
             'galerii'       => $galerii,
-            'linkuri_rupte' => $rupte,
+            'linkuri_rupte' => array_values(array_unique($rupte)),
             'externe'       => $externe,
             'spam_eliminat' => $spam,
         ];
+    }
+
+    /** Nodul mai e în arbore sub rădăcină? (un strămoș poate fi fost deja scos) */
+    private function atasat(DOMNode $nod, DOMElement $rad): bool
+    {
+        for ($p = $nod->parentNode; $p !== null; $p = $p->parentNode) {
+            if ($p === $rad) { return true; }
+        }
+        return false;
+    }
+
+    /** Bloc fără alte blocuri înăuntru (deci textul lui îi aparține în întregime). */
+    private function esteFrunza(DOMElement $el): bool
+    {
+        foreach ($el->getElementsByTagName('*') as $d) {
+            if (in_array(strtolower($d->tagName), self::CONTAINERE, true)) { return false; }
+        }
+        return true;
+    }
+
+    /** Textul de afișat pentru o ancoră ruptă: textul ei, altfel alt/title de pe imaginea din ea. */
+    private function textAncora(DOMElement $a): string
+    {
+        $text = trim($a->textContent);
+        if ($text !== '') { return $a->textContent; }
+        foreach ($a->getElementsByTagName('img') as $img) {
+            foreach (['alt', 'title'] as $atr) {
+                $v = trim($img->getAttribute($atr));
+                if ($v !== '') { return $v; }
+            }
+        }
+        return '';
+    }
+
+    /** Înlocuiește elementul cu textul dat; dacă textul e gol, scoate elementul. */
+    private function inlocuiesteCuText(DOMDocument $dom, DOMElement $el, string $text): void
+    {
+        $parinte = $el->parentNode;
+        if ($parinte === null) { return; }
+        if (trim($text) === '') {
+            $parinte->removeChild($el);
+            return;
+        }
+        $parinte->replaceChild($dom->createTextNode($text), $el);
+    }
+
+    /**
+     * Echivalentul lui `wpautop()`: împachetează în `<p>` secvențele de text/inline
+     * de la nivelul rădăcinii (paragrafe separate doar prin `\n` în HTML-ul vechi).
+     */
+    private function paragrafeaza(string $html): string
+    {
+        if (trim($html) === '') { return ''; }
+        $dom = new DOMDocument('1.0', 'UTF-8');
+        libxml_use_internal_errors(true);
+        $dom->loadHTML('<?xml encoding="UTF-8"><div id="radacina">' . $html . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+        $rad = $dom->getElementById('radacina');
+        if ($rad === null) { return $html; }
+
+        $out = '';
+        $tampon = '';
+        $goleste = static function () use (&$out, &$tampon): void {
+            $t = trim($tampon);
+            $tampon = '';
+            if ($t === '') { return; }
+            $parti = preg_split('/\n\s*\n/', $t) ?: [$t];
+            if (count($parti) < 2) { $parti = preg_split('/\n/', $t) ?: [$t]; }
+            foreach ($parti as $p) {
+                $p = trim($p);
+                if ($p !== '') { $out .= '<p>' . $p . '</p>'; }
+            }
+        };
+        foreach ($rad->childNodes as $c) {
+            $bucata = (string) $dom->saveHTML($c);
+            if ($c instanceof DOMElement && in_array(strtolower($c->tagName), self::BLOCURI, true)) {
+                $goleste();
+                $out .= $bucata;
+                continue;
+            }
+            if (!$c instanceof DOMElement && !$c instanceof DOMText) {
+                continue; // comentarii, instrucțiuni de procesare
+            }
+            $tampon .= $bucata;
+        }
+        $goleste();
+
+        return $this->colapseazaSpatii(trim($out));
+    }
+
+    /** `</p>\n<p>` → `</p><p>`, dar `</strong> <em>` rămâne cu spațiul lui. */
+    private function colapseazaSpatii(string $html): string
+    {
+        return preg_replace_callback(
+            '#(</?)([a-z0-9]+)([^>]*)>\s+(?=</?([a-z0-9]+))#i',
+            static function (array $m): string {
+                $eticheta = $m[1] . $m[2] . $m[3] . '>';
+                $bloc = in_array(strtolower($m[2]), self::BLOCURI, true)
+                    || in_array(strtolower($m[4]), self::BLOCURI, true);
+                return $bloc ? $eticheta : $eticheta . ' ';
+            },
+            $html
+        ) ?? $html;
     }
 }

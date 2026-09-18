@@ -41,4 +41,37 @@ $r = $c->proceseaza('<h1 class="t">Rețete</h1><p class="lead" style="x">A <a hr
 ok('h1 => h2, fără clase', str_starts_with($n($r['html']), '<h2>Rețete</h2><p>A '));
 ok('extern păstrat, host raportat', str_contains($r['html'], 'href="https://www.madr.ro/x"') && $r['externe'] === ['www.madr.ro']);
 ok('gol => gol', $c->proceseaza('')['html'] === '');
+
+// 8. Regresii din corpusul real (revizie runda 1)
+
+// 8a. pagina 307: ancoră spam în mijlocul unei fraze legitime — cuvântul rămâne
+$r = $c->proceseaza('<p>În cadrul acestui <a href="http://writemyessay4me.org/">seminar</a> au fost prezentate tehnici de vânzare.</p>');
+ok('307: textul ancorei spam rămâne', str_contains($r['html'], 'acestui seminar au fost') && !str_contains($r['html'], '<a'));
+ok('307: contor spam', $r['spam_eliminat'] === 1);
+
+// 8b. pagina 277: bloc spam al cărui text stă în ancoră — tot blocul dispare
+$r = $c->proceseaza('<p>Ghid</p><div class="dc">Do a virtual book tour and get on some <a href="https://ex.tld/x">paper writing service</a> podcasts.</div>');
+ok('277: blocul spam dispare întreg', !str_contains($r['html'], 'virtual book tour') && !str_contains($r['html'], 'podcasts'));
+ok('277: restul rămâne, contor 1', str_contains($r['html'], '<p>Ghid</p>') && $r['spam_eliminat'] === 1);
+
+// 8c. spațiile dintre inline-uri nu se pierd
+$r = $c->proceseaza('<p><strong>Ghidul</strong> <em>solicitantului</em> <b>2023</b></p>');
+ok('inline: spațiile păstrate', str_contains($r['html'], '</strong> <em>') && str_contains($r['html'], '</em> <b>'));
+
+// 8d. wpautop: text la nivel de rădăcină => paragrafe
+$r = $c->proceseaza("Primul paragraf al paginii.\n\nAl doilea paragraf, cu <strong>accent</strong>.\n\n<p>Deja paragraf</p>");
+ok('wpautop: text liber => <p>', $n($r['html']) === '<p>Primul paragraf al paginii.</p><p>Al doilea paragraf, cu <strong>accent</strong>.</p><p>Deja paragraf</p>');
+
+// 8e. spam imbricat: contorizat o singură dată, ambalajul nu ia cu el conținut bun
+$r = $c->proceseaza('<div><p>Text bun de păstrat.</p><p>Cheap essay writing here.</p></div>');
+ok('spam imbricat: contor 1, restul rămâne', $r['spam_eliminat'] === 1 && str_contains($r['html'], 'Text bun') && !str_contains($r['html'], 'essay'));
+
+// 8f. <a><img></a> cu fișier lipsă => nu rămâne <p></p> gol; linkuri_rupte deduplicat
+$r = $c->proceseaza('<p><a href="/wp-content/uploads/2019/05/Lipsa.pdf"><img src="/wp-content/uploads/2019/05/Lipsa.pdf"></a></p><p><a href="/wp-content/uploads/2019/05/Lipsa.pdf">Lipsă</a></p>');
+ok('a>img rupt: fără paragraf gol', !str_contains($r['html'], '<p></p>') && !str_contains($r['html'], '<img'));
+ok('linkuri_rupte deduplicat', $r['linkuri_rupte'] === ['/wp-content/uploads/2019/05/Lipsa.pdf']);
+
+// 8g. wp-block-file cu clasă compusă
+$r = $c->proceseaza('<div class="wp-block-file is-style-x"><object data="x" type="application/pdf"></object><a href="https://www.flagprahova.ro/wp-content/uploads/2023/12/Comunicat-SDL.pdf">Comunicat</a><a href="https://www.flagprahova.ro/wp-content/uploads/2023/12/Comunicat-SDL.pdf" download>Download</a></div>');
+ok('wp-block-file clasă compusă', $n($r['html']) === '<p><a href="/fisiere/2023/12/comunicat-sdl.pdf">Comunicat</a></p>');
 final_test();
