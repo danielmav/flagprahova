@@ -19,7 +19,8 @@ final class MiniaturaController
         $latime = (int) $args['latime'];
         $baza = preg_replace('/\.webp$/i', '', $ceruta);
         $abs = null;
-        foreach (['jpg', 'jpeg', 'png', 'webp', 'JPG', 'JPEG', 'PNG'] as $ext) {
+        // Doar minuscule: `Upload::numeSigur()` scrie extensiile lowercase pe disc.
+        foreach (['jpg', 'jpeg', 'png', 'webp'] as $ext) {
             $abs = $this->mini->asigura($baza . '.' . $ext, $latime);
             if ($abs !== null) { break; }
         }

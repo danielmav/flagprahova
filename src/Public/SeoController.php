@@ -19,15 +19,11 @@ final class SeoController
 
     public function sitemap(Request $request, Response $response): Response
     {
-        $url = $this->url();
-        $baza = $this->ctx->base();
-        // `href` include `base_path`; `app.url` poate deja conține baza (staging
-        // în subfolder), deci scoatem baza din href ca să nu se dubleze.
-        $loc = static fn(string $href): string => $url . ($baza !== '' && str_starts_with($href, $baza)
-            ? substr($href, strlen($baza))
-            : $href);
+        // `href` include `base_path`, iar `APP_URL` îl include și el (staging în
+        // subfolder). Regula stă într-un singur loc: `Context::urlPublic()`.
+        $loc = fn(string $cale): string => $this->ctx->urlPublic($cale);
 
-        $intrari = [['loc' => $url . '/', 'lastmod' => null]];
+        $intrari = [['loc' => $loc('/'), 'lastmod' => null]];
         $aduna = function (array $noduri) use (&$aduna, &$intrari, $loc): void {
             foreach ($noduri as $n) {
                 if (in_array($n['tip'], ['pagina', 'dosar', 'galerie'], true)) {
@@ -40,7 +36,7 @@ final class SeoController
             }
         };
         foreach ($this->ctx->sectiuni() as $s) {
-            $intrari[] = ['loc' => $url . '/' . $s['slug'] . '/', 'lastmod' => null];
+            $intrari[] = ['loc' => $loc('/' . $s['slug'] . '/'), 'lastmod' => null];
             $aduna($this->ctx->arbore($s));
         }
 
@@ -50,13 +46,13 @@ final class SeoController
 
     public function robots(Request $request, Response $response): Response
     {
-        $url = $this->url();
-        $response->getBody()->write("User-agent: *\nDisallow: /admin\nDisallow: /fisiere/mini/\nSitemap: {$url}/sitemap.xml\n");
+        // Căile din `Disallow` sunt relative la host, deci poartă `base_path`;
+        // calea adminului vine din setări (`ADMIN_PATH`), nu e hardcodată.
+        $baza  = $this->ctx->base();
+        $admin = $baza . (string) $this->container['settings']['admin']['path'];
+        $mini  = $baza . (string) $this->container['settings']['upload']['url'] . '/mini/';
+        $harta = $this->ctx->urlPublic('/sitemap.xml');
+        $response->getBody()->write("User-agent: *\nDisallow: {$admin}\nDisallow: {$mini}\nSitemap: {$harta}\n");
         return $response->withHeader('Content-Type', 'text/plain; charset=utf-8');
-    }
-
-    private function url(): string
-    {
-        return rtrim((string) $this->container['settings']['app']['url'], '/');
     }
 }

@@ -213,13 +213,37 @@ img { max-width: 100%; }
 
 /* Deschidere pe hover/focus la desktop; .fp-open o pune site.js la touch. */
 @media (min-width: 992px) {
-  /* „Noutăți" are ~25 de intrări și lista trece sub marginea ecranului. O facem
-     derulabilă, dar NUMAI când nu conține submeniuri: `overflow-y` ar tăia un
-     `.fp-submenu` care se deschide lateral (`left: 100%`). */
+  /* Listele lungi („Noutăți" ~25 de intrări, „Arhivă" 28) trec sub marginea
+     ecranului în header-ul sticky. Le plăfonăm la înălțimea ferestrei minus capul de
+     pagină și le facem derulabile. 9rem = banda de finanțare (~56 px, vizibilă doar
+     nederulat) + bara cu sigla (~76 px), ca să încapă și în vârful paginii.
+     Excepția `:not(:has(.fp-has-sub))`: `overflow` ar tăia un `.fp-submenu` care se
+     deschide lateral (`left: 100%`). Listele lungi nu mai au așa ceva — nivelul 3
+     se randează inline (`fp-has-sub-inline`, vezi `_meniu_desktop.twig`) — deci
+     intră în plafon; în browserele fără `:has()` selectorul nu se potrivește deloc
+     și se pierde doar plafonul, nu și flyout-urile. */
   .fp-nav .dropdown-menu:not(:has(.fp-has-sub)) {
-    max-height: min(70vh, 30rem);
+    max-height: calc(100vh - 9rem);
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+
+  /* Nivelul 3 inline: sub părinte, indentat, static (nu flyout), font mai mic. */
+  .fp-nav .fp-submenu--inline {
+    display: block;
+    position: static;
+    min-width: 0;
+    margin: 0 0 .35rem;
+    padding: 0 0 0 .85rem;
+    background: transparent;
+    border-left: 2px solid var(--fp-border);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .fp-nav .fp-submenu--inline .dropdown-item {
+    padding-block: .2rem;
+    font-size: 13.5px;
   }
 
   .fp-nav .dropdown:hover > .dropdown-menu,

@@ -49,7 +49,26 @@ try {
 
     $r = cerere('POST', "/2021-2027/normala-$m", $bun);
     ok('POST pe pagină fără șablon contact => 404', $r->getStatusCode() === 404);
+
+    // Throttle: 5 mesaje pe oră de pe același IP, apoi „succes" tăcut fără salvare.
+    $ip = ip_hash('127.0.0.1');
+    if ($ip === null) {
+        ok('IP_SALT gol => throttle-ul e sărit (ip_hash null), notat explicit', true);
+    } else {
+        $nAnte = (int) $pdo->query('SELECT COUNT(*) FROM mesaje_contact')->fetchColumn();
+        $umple = $pdo->prepare("INSERT INTO mesaje_contact (sectiune_id, nume, email, mesaj, ip_hash) VALUES (:s, 'Flood', :e, 'x', :ip)");
+        for ($i = 0; $i < 4; $i++) {
+            $umple->execute(['s' => $s['id'], 'e' => "flood-$i-$m@example.com", 'ip' => $ip]);
+        }
+        ok('  4 mesaje adăugate pe același IP (total 5 în ultima oră)', (int) $pdo->query('SELECT COUNT(*) FROM mesaje_contact')->fetchColumn() === $nAnte + 4);
+        $nPrag = (int) $pdo->query('SELECT COUNT(*) FROM mesaje_contact')->fetchColumn();
+        $r = cerere('POST', $url, ['email' => "peste-prag-$m@example.com"] + $bun);
+        ok('al 6-lea mesaj/oră => 302 tăcut, nimic salvat', $r->getStatusCode() === 302
+            && (int) $pdo->query('SELECT COUNT(*) FROM mesaje_contact')->fetchColumn() === $nPrag
+            && (int) $pdo->query("SELECT COUNT(*) FROM mesaje_contact WHERE email = 'peste-prag-$m@example.com'")->fetchColumn() === 0);
+    }
 } finally {
+    $pdo->exec("DELETE FROM mesaje_contact WHERE email LIKE '%-$m@example.com'");
     $pdo->exec("DELETE FROM mesaje_contact WHERE email = 'ion-$m@example.com'");
     if ($ids) { $pdo->exec('DELETE FROM meniu WHERE id IN (' . implode(',', $ids) . ')'); }
 }

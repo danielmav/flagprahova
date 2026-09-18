@@ -22,11 +22,16 @@ final class PaginiController
         return $this->twig->render($response, 'landing.twig', $this->ctx->variabile(null, '/'));
     }
 
-    /** Redirect 301 de la /{perioada} la /{perioada}/ (o singură formă canonică). */
+    /**
+     * Redirect 301 de la /{perioada} la /{perioada}/ (o singură formă canonică).
+     * Secțiunea se caută ÎNTÂI: altfel o cale inexistentă ar primi un 301 către
+     * un 404, iar crawlerele ar indexa redirectul.
+     */
     public function slash(Request $request, Response $response, array $args): Response
     {
+        $s = $this->ctx->sectiune($args['perioada']) ?? throw new HttpNotFoundException($request);
         return $response
-            ->withHeader('Location', $this->ctx->base() . '/' . $args['perioada'] . '/')
+            ->withHeader('Location', $this->ctx->base() . '/' . $s['slug'] . '/')
             ->withStatus(301);
     }
 

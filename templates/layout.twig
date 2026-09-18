@@ -6,8 +6,8 @@
     {# `og_image` e o VARIABILĂ, nu un bloc: un bloc s-ar randa și în pagină.
        Paginile care vor altă imagine o pasează din controller. #}
     {% set og_image = og_image|default('/assets/img/og-default.png') %}
-    {% set canonical = app.url ~ canonical_path %}
-    {% set og_img = app.url ~ og_image %}
+    {% set canonical = url_public(canonical_path) %}
+    {% set og_img = url_public(og_image) %}
     <title>{% block title %}Asociația FLAG Prahova{% endblock %}</title>
     <meta name="description" content="{% block description %}{{ setari.landing_text|default('') }}{% endblock %}">
     <link rel="canonical" href="{{ canonical }}">
@@ -36,7 +36,7 @@
 {% block content %}{% endblock %}
 </main>
 {% include '_footer.twig' %}
-<div class="fp-lightbox" hidden>
+<div class="fp-lightbox" hidden role="dialog" aria-modal="true" aria-label="Imagine mărită">
     <button type="button" data-inchide aria-label="Închide">{% include '_icon.twig' with {'nume': 'inchide'} only %}</button>
     <button type="button" data-prev aria-label="Imaginea anterioară">{% include '_icon.twig' with {'nume': 'stanga'} only %}</button>
     <img src="" alt="">

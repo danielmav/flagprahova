@@ -34,6 +34,10 @@ final class Bootstrap
                 'secure'   => $https,
             ]);
             session_name('fp_session');
+            // Fără cache limiter: implicit PHP trimite `Expires: Thu, 19 Nov 1981`
+            // + `Pragma: no-cache` pe TOATE răspunsurile cu sesiune, inclusiv pe
+            // paginile publice. Cache-ul îl controlăm noi, pe rută.
+            session_cache_limiter('');
             session_start();
         }
         if (empty($_SESSION['csrf'])) {
@@ -61,6 +65,11 @@ final class Bootstrap
 
         $app->add(function (Request $request, RequestHandler $handler): Response {
             $response = $handler->handle($request);
+            // `X-Powered-By` vine din `expose_php` în php.ini (nu din PSR-7), deci
+            // se scoate din lista de headere deja programate ale SAPI-ului.
+            if (PHP_SAPI !== 'cli' && !headers_sent()) {
+                header_remove('X-Powered-By');
+            }
             return $response
                 ->withHeader('X-Content-Type-Options', 'nosniff')
                 ->withHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
@@ -117,7 +126,7 @@ final class Bootstrap
             $container['settings']
         );
 
-        self::functiiTwig($env, $container['settings']);
+        self::functiiTwig($env, $container['settings'], $container['context']);
 
         if (($container['settings']['db_wp']['name'] ?? '') !== '') {
             $container['legacy'] = static function () use ($container): Migrare\Legacy {
@@ -134,11 +143,10 @@ final class Bootstrap
      * Funcțiile Twig folosite de șabloanele publice (documente, galerii).
      * @param array<string,mixed> $settings
      */
-    private static function functiiTwig(\Twig\Environment $env, array $settings): void
+    private static function functiiTwig(\Twig\Environment $env, array $settings, Public\Context $ctx): void
     {
         $base      = (string) $settings['app']['base_path'];
         $fisiere   = (string) $settings['upload']['url'];
-        $urlPublic = (string) $settings['app']['url'];
 
         // „1,2 MB" / „340 KB": separatorii românești, o zecimală doar la MB.
         $env->addFunction(new \Twig\TwigFunction('marime', static function (int|string|null $b): string {
@@ -161,10 +169,11 @@ final class Bootstrap
             static fn(string $cale, int $latime): string => $base . $fisiere . '/mini/' . $latime . '/'
                 . preg_replace('/\.[^.\/]+$/', '.webp', $cale)
         ));
-        // URL absolut, pentru OG/JSON-LD/sitemap.
+        // URL absolut, pentru canonical/OG/JSON-LD. Regula (APP_URL include deja
+        // BASE_PATH) stă o singură dată, în `Context::urlPublic()`.
         $env->addFunction(new \Twig\TwigFunction(
             'url_public',
-            static fn(string $cale): string => $urlPublic . $cale
+            static fn(?string $cale): string => $ctx->urlPublic((string) $cale)
         ));
     }
 }

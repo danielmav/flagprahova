@@ -37,5 +37,15 @@ try {
     @unlink("$dir/$rel");
     @unlink("$dir/mini/480/2026/09/mini-test-$m.webp");
     @unlink("$dir/mini/1600/2026/09/mini-test-$m.webp");
+    // Directoarele create de test: `@rmdir` reușește DOAR dacă au rămas goale,
+    // deci nu atinge nimic dintr-un `fisiere/` real.
+    foreach ([
+        "$dir/2026/09", "$dir/2026",
+        "$dir/mini/480/2026/09", "$dir/mini/480/2026", "$dir/mini/480",
+        "$dir/mini/1600/2026/09", "$dir/mini/1600/2026", "$dir/mini/1600",
+        "$dir/mini",
+    ] as $d) {
+        @rmdir($d);
+    }
 }
 final_test();

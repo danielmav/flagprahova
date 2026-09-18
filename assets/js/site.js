@@ -21,22 +21,30 @@
   var box = document.querySelector('.fp-lightbox');
   if (!box) { return; }
   var img = box.querySelector('img'), cap = box.querySelector('.fp-lightbox__legenda');
-  var lista = [], idx = 0;
+  var btnInchide = box.querySelector('[data-inchide]');
+  var lista = [], idx = 0, declansator = null;
   function arata(i) {
     idx = (i + lista.length) % lista.length;
     img.src = lista[idx].getAttribute('data-full');
     img.alt = lista[idx].getAttribute('data-legenda') || '';
     cap.textContent = img.alt;
+    var eraInchis = box.hidden;
     box.hidden = false; document.body.style.overflow = 'hidden';
+    // Dialog modal: focusul intră pe „Închide", ca să nu rămână pe pagina de dedesubt.
+    if (eraInchis) { btnInchide.focus(); }
   }
-  function inchide() { box.hidden = true; document.body.style.overflow = ''; }
+  function inchide() {
+    box.hidden = true; document.body.style.overflow = '';
+    // Focusul se întoarce pe miniatura din care s-a deschis lightbox-ul.
+    if (declansator) { declansator.focus(); declansator = null; }
+  }
   document.querySelectorAll('.fp-galerie').forEach(function (g) {
     var items = Array.prototype.slice.call(g.querySelectorAll('.fp-galerie__item'));
     items.forEach(function (a, i) {
-      a.addEventListener('click', function (ev) { ev.preventDefault(); lista = items; arata(i); });
+      a.addEventListener('click', function (ev) { ev.preventDefault(); lista = items; declansator = a; arata(i); });
     });
   });
-  box.querySelector('[data-inchide]').addEventListener('click', inchide);
+  btnInchide.addEventListener('click', inchide);
   box.querySelector('[data-prev]').addEventListener('click', function () { arata(idx - 1); });
   box.querySelector('[data-next]').addEventListener('click', function () { arata(idx + 1); });
   box.addEventListener('click', function (ev) { if (ev.target === box) { inchide(); } });

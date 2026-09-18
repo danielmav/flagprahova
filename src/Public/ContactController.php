@@ -48,8 +48,19 @@ final class ContactController
         }
 
         $pdo = $this->container['db']->pdo();
+        // Throttle: maxim 5 mesaje pe oră de pe același IP. Răspunsul e identic cu
+        // succesul (ca la bot), ca să nu spunem spammerului că a fost limitat.
+        // `ip_hash` e null fără `IP_SALT` — atunci nu putem limita pe IP.
+        $ipHash = ip_hash($request->getServerParams()['REMOTE_ADDR'] ?? null);
+        if ($ipHash !== null) {
+            $st = $pdo->prepare('SELECT COUNT(*) FROM mesaje_contact WHERE ip_hash = :h AND trimis_la > (NOW() - INTERVAL 1 HOUR)');
+            $st->execute(['h' => $ipHash]);
+            if ((int) $st->fetchColumn() >= 5) {
+                return $succes;
+            }
+        }
         $pdo->prepare('INSERT INTO mesaje_contact (sectiune_id, nume, email, mesaj, ip_hash) VALUES (:s, :n, :e, :m, :ip)')
-            ->execute(['s' => $s['id'], 'n' => $valori['nume'], 'e' => $valori['email'], 'm' => $valori['mesaj'], 'ip' => ip_hash($request->getServerParams()['REMOTE_ADDR'] ?? null)]);
+            ->execute(['s' => $s['id'], 'n' => $valori['nume'], 'e' => $valori['email'], 'm' => $valori['mesaj'], 'ip' => $ipHash]);
         $id = (int) $pdo->lastInsertId();
 
         $catre = $this->container['setari']->get('contact_email_destinatar') ?: $this->container['mailer']->adminAddress();

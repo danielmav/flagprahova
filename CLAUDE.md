@@ -40,6 +40,9 @@ Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO
 - Fonturile (DM Serif Display, DM Sans) sunt self-hostate în `assets/fonts/` + `assets/css/fonts.css`; se (re)descarcă cu `php scripts/descarca_fonturi.php`.
 - Setările de contact folosite public: `contact_adresa`, `contact_telefon`, `contact_email_public` (separate de `contact_email_destinatar`, unde ajung mesajele din formular).
 - `router.php` e gitignored (necesar doar pentru PHP built-in server local); la un clone nou, copiază-l din `pestelocal`.
+- `APP_URL` INCLUDE `BASE_PATH` (staging: `APP_URL=https://flagprahova.ro/nou`, `BASE_PATH=/nou`), iar href-urile din `Context` poartă deja baza → URL-urile absolute (canonical, OG, JSON-LD, sitemap) se compun DOAR cu `Context::urlPublic()` / funcția Twig `url_public()`, care scot baza din cale înainte de `app.url`; nu concatena `app.url ~ …` în șabloane.
+- Dropdown-urile de desktop se plafonează cu `:has()` (Firefox ≥ 121 / Safari ≥ 15.4; în browserele vechi se pierde doar plafonul de derulare, nu și flyout-urile), iar listele de nivel 2 cu peste 12 intrări își randează nivelul 3 INLINE (`fp-submenu--inline`, li cu `fp-has-sub-inline`), nu ca flyout lateral — altfel `overflow` ar tăia submeniul.
+- Formularul de contact are throttle de 5 mesaje/oră/IP (`mesaje_contact.ip_hash`, `trimis_la`); peste prag răspunde cu același 302 „succes" tăcut ca la bot, fără salvare și fără mail. Fără `IP_SALT`, `ip_hash()` e null și throttle-ul se sare.
 - Miniaturile galeriilor se generează la cerere în `fisiere/mini/{480|1600}/…` (`Fisiere\Miniatura`), gitignored ca tot `fisiere/`; `reset_continut.php` le șterge.
 
 ## Migrare din WordPress

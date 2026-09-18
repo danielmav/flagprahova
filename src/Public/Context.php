@@ -40,6 +40,46 @@ final class Context
         return (string) $this->settings['app']['base_path'];
     }
 
+    /**
+     * URL public ABSOLUT pentru o cale internă. Convenție: `APP_URL` include deja
+     * `BASE_PATH` (staging în subfolder: `APP_URL=https://exemplu.ro/nou`,
+     * `BASE_PATH=/nou`), iar `href()`/`arbore()` întorc căi CU bază — deci baza se
+     * scoate din cale înainte de concatenare, altfel prefixul s-ar dubla.
+     * Singurul loc cu regula asta: funcția Twig `url_public()` și `SeoController`
+     * o apelează, nu o rescriu.
+     */
+    public function urlPublic(string $cale): string
+    {
+        $baza = $this->base();
+        if ($baza !== '' && ($cale === $baza || str_starts_with($cale, $baza . '/'))) {
+            $cale = substr($cale, strlen($baza));
+        }
+        return rtrim((string) $this->settings['app']['url'], '/') . ($cale === '' ? '/' : $cale);
+    }
+
+    /**
+     * Rezumatul de ~155 de caractere folosit ca `meta description`: text curat,
+     * spațiile colapsate, tăiat pe cuvânt.
+     */
+    public static function rezumat(string $html, int $max = 155): string
+    {
+        // Tag-urile de BLOC devin spațiu înainte de `strip_tags`, altfel „…proiect:"
+        // s-ar lipi de titlul paragrafului următor; cele inline (`strong`, `a`) cad
+        // fără spațiu, ca să nu rupă cuvintele din interiorul unei fraze.
+        $bloc = '/<\s*\/?\s*(p|div|br|li|ul|ol|h[1-6]|tr|td|th|table|section|article|blockquote)\b[^>]*>/i';
+        $text = html_entity_decode(strip_tags((string) preg_replace($bloc, ' ', $html)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = trim((string) preg_replace('/\s+/u', ' ', str_replace("\xC2\xA0", ' ', $text)));
+        if ($text === '' || mb_strlen($text) <= $max) {
+            return $text;
+        }
+        $taiat = mb_substr($text, 0, $max);
+        $spatiu = mb_strrpos($taiat, ' ');
+        if ($spatiu !== false && $spatiu > 0) {
+            $taiat = mb_substr($taiat, 0, $spatiu);
+        }
+        return rtrim($taiat, " ,.;:–-") . '…';
+    }
+
     /** Arborele vizibil al secțiunii, cu `href` și `extern` pe fiecare nod. */
     public function arbore(array $sectiune): array
     {
@@ -109,6 +149,11 @@ final class Context
                     $cealalta = $s;
                 }
             }
+        }
+        // `meta description` din primele ~155 de caractere ale conținutului, când
+        // există; șabloanele cad pe textul generic dacă rămâne gol.
+        if (!isset($extra['descriere']) && ($extra['rand']['continut_html'] ?? '') !== '') {
+            $extra['descriere'] = self::rezumat((string) $extra['rand']['continut_html']);
         }
         return $extra + [
             'sectiuni'       => $this->sectiuni(),

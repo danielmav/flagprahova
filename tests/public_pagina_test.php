@@ -31,6 +31,9 @@ try {
     ok('pagina => 200', $r->getStatusCode() === 200);
     ok('  h1 unic + conținut raw', substr_count($c, '<h1') === 1 && str_contains($c, "<h2>Sub $m</h2>") && str_contains($c, '<strong>bold</strong>'));
     ok('  title/canonical', str_contains($c, "<title>Pagina $m") && str_contains($c, "href=\"http://flagprahova.test/2014-2020/pagina-$m\""));
+    // meta description din conținut: tag-urile de bloc devin spațiu, cele inline nu.
+    ok('  description din conținut', str_contains($c, "<meta name=\"description\" content=\"Sub $m Text bold\">"));
+    ok('  dosarul (fără conținut) cade pe descrierea generică', str_contains(corp(cerere('GET', "/2014-2020/arhiva-$m")), "content=\"Arhiva $m — FLAG Prahova 2014-2020, Asociația FLAG Prahova.\""));
     // JSON-LD: se parsează, nu se caută pe substring (json_encode nu pune spațiu după `:`).
     $ld = null;
     if (preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $c, $mm)) { $ld = json_decode(trim($mm[1]), true); }

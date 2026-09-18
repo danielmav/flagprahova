@@ -9,8 +9,8 @@
     '@context': 'https://schema.org',
     '@type':    'Organization',
     'name':     'Asociația FLAG Prahova',
-    'url':      app.url ~ '/',
-    'logo':     app.url ~ '/assets/img/logo/flag-prahova.png'
+    'url':      url_public('/'),
+    'logo':     url_public('/assets/img/logo/flag-prahova.png')
 } %}
 {% if setari.contact_telefon|default('') %}{% set ld = ld|merge({'telephone': setari.contact_telefon}) %}{% endif %}
 {% if setari.contact_email_public|default('') %}{% set ld = ld|merge({'email': setari.contact_email_public}) %}{% endif %}
