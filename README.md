@@ -14,6 +14,26 @@ php database/create_admin.php email@exemplu.ro "Nume Prenume" parola
 
 Servește cu Laragon / Apache pe `http://flagprahova.test`, sau cu serverul built-in PHP (folosind `router.php`, copiat separat — vezi `CLAUDE.md`).
 
+## Sit public
+
+Rutele publice (fără `?id=`, fără `.php`; totul trece prin front controller):
+
+- `/` — pagina de start, cu alegerea perioadei de programare.
+- `/{perioada}/` — acasă de secțiune (`2021-2027`, `2014-2020`). `/{perioada}`, fără slash, face redirect 301
+  spre forma canonică cu slash.
+- `/{perioada}/{slug}` — intrarea de meniu: pagină, dosar (listă de documente și subdosare) sau galerie.
+  Intrările de tip `document` și `link` fac redirect spre fișier, respectiv spre URL-ul extern.
+- `POST /{perioada}/{slug}` — trimiterea formularului de contact (`_csrf`, honeypot și prag de timp).
+- `/fisiere/AAAA/LL/...` — fișierele încărcate, servite static de Apache.
+- `/fisiere/mini/480/...` și `/fisiere/mini/1600/...` — miniaturi WebP generate la cerere din imaginile
+  galeriilor (blocate din `robots.txt`).
+- `/sitemap.xml` — paginile, dosarele și galeriile vizibile, cu `lastmod`; fără documente și linkuri.
+- `/robots.txt` — `Disallow` pe `/admin` și `/fisiere/mini/`, plus linkul către sitemap.
+- Orice alt URL — 404 real (status 404, `noindex`), cu legături spre cele două secțiuni.
+
+Capturile de ecran ale paginilor publice se fac cu `node tests/capturi.mjs` (rezultatele în `storage/shots/`,
+ignorat de git).
+
 ## Admin
 
 `http://flagprahova.test/admin/login` (calea e configurabilă din `ADMIN_PATH` în `.env`).
