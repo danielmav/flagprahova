@@ -86,6 +86,9 @@ img { max-width: 100%; }
 
 .fp-logos img { height: 40px; width: auto; }
 
+/* Sigla 2021-2027 e mai lată decât celelalte (raport 212×142) și trebuie citibilă. */
+.fp-logos img.fp-logos__2127 { height: 56px; }
+
 .fp-logos span {
   font-size: 13px;
   font-weight: 700;
@@ -115,6 +118,7 @@ img { max-width: 100%; }
 /* --- Meniu -------------------------------------------------------------- */
 .fp-nav {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: .25rem;
   margin: 0;
@@ -131,6 +135,18 @@ img { max-width: 100%; }
   font-weight: 500;
   color: var(--fp-navy);
   border-bottom: 3px solid transparent;
+}
+
+/* Nivelul 1: 9 intrări (2021-2027) trebuie să încapă pe un rând lângă siglă
+   și comutator la ≥1200px; sub 1200px se pot rupe pe al doilea rând. */
+.fp-nav__lista > .fp-nav__item > .fp-nav__link {
+  white-space: nowrap;
+  font-size: 13px;
+  padding-inline: .3rem;
+}
+
+@media (min-width: 992px) {
+  .fp-nav__lista { row-gap: .25rem; column-gap: 0; }
 }
 
 .fp-nav__link:hover,

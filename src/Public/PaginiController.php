@@ -33,6 +33,15 @@ final class PaginiController
     public function acasa(Request $request, Response $response, array $args): Response
     {
         $s = $this->ctx->sectiune($args['perioada']) ?? throw new HttpNotFoundException($request);
-        return $this->twig->render($response, 'sectiune/acasa.twig', $this->ctx->variabile($s, '/' . $s['slug'] . '/'));
+        $vars = $this->ctx->variabile($s, '/' . $s['slug'] . '/');
+        $noutati = []; $contact = '';
+        foreach ($vars['arbore'] as $n) {
+            if ($n['slug'] === 'noutati') { $noutati = array_slice($n['copii'], 0, 3); }
+            if ($n['slug'] === 'contact') { $contact = $n['href']; }
+        }
+        $vars['noutati'] = $noutati;
+        $vars['nivel1'] = $vars['arbore'];
+        $vars['contact_href'] = $contact;
+        return $this->twig->render($response, 'sectiune/acasa.twig', $vars);
     }
 }

@@ -1,12 +1,69 @@
-{# PROVIZORIU — task 3 rescrie pagina de start a secțiunii. #}
 {% extends 'layout.twig' %}
-{% block title %}{{ sectiune.titlu }}{% endblock %}
+{% block title %}{{ sectiune.titlu }} · Asociația FLAG Prahova{% endblock %}
 {% block description %}{{ sectiune.subtitlu }}{% endblock %}
 {% block content %}
-<section class="fp-section">
+<section class="fp-hero">
     <div class="container">
-        <h1>{{ sectiune.titlu }}</h1>
-        <div class="fp-prose">{{ sectiune.acasa_html|raw }}</div>
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <span class="fp-eyebrow">{{ sectiune.slug }}</span>
+                <h1 class="mt-3">{{ sectiune.titlu }}</h1>
+                <p class="lead">{{ sectiune.subtitlu }}</p>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    {% for n in nivel1 %}{% if n.slug == 'noutati' and n.href != '' %}<a class="fp-btn" href="{{ n.href }}">Noutăți</a>{% endif %}{% endfor %}
+                    {% if contact_href %}<a class="fp-btn fp-btn--outline fp-hero__btn-contact" href="{{ contact_href }}">Contact</a>{% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6"><img class="fp-hero__ilustratie" src="{{ base }}/assets/img/ilustratie.svg" alt="" width="640" height="480"></div>
+        </div>
     </div>
 </section>
+
+<section class="fp-section fp-section--soft" id="despre">
+    <div class="container">
+        <div class="row g-5 align-items-start">
+            <div class="col-lg-7">
+                <span class="fp-eyebrow">Despre program</span>
+                <div class="fp-prose mt-3">{{ sectiune.acasa_html|raw }}</div>
+            </div>
+            <div class="col-lg-5">
+                {% if noutati %}
+                <div class="fp-card fp-card--lista">
+                    <h2 class="h4">Noutăți</h2>
+                    {% for n in noutati %}{% include '_document_rand.twig' with {'n': n} only %}{% endfor %}
+                    {% for n in nivel1 %}{% if n.slug == 'noutati' and n.href != '' %}<a class="fp-btn fp-btn--outline mt-3" href="{{ n.href }}">Toate noutățile</a>{% endif %}{% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="fp-section">
+    <div class="container">
+        <span class="fp-eyebrow fp-eyebrow--soft">Ce găsești aici</span>
+        <div class="row g-4 mt-1">
+            {% for n in nivel1 %}{% if n.href != '' %}
+            <div class="col-sm-6 col-lg-3">
+                <a class="fp-card d-block h-100" href="{{ n.href }}"{% if n.extern %} target="_blank" rel="noopener noreferrer"{% endif %}>
+                    <span class="fp-card__icon">{% include '_icon.twig' with {'nume': n.slug == 'noutati' ? 'noutati' : (n.slug == 'contact' ? 'contact' : n.tip)} only %}</span>
+                    <span class="h5 d-block mt-3">{{ n.titlu }}</span>
+                    {% if n.copii|length %}<span class="text-muted small">{{ n.copii|length }} {{ n.copii|length == 1 ? 'intrare' : 'intrări' }}</span>{% endif %}
+                </a>
+            </div>
+            {% endif %}{% endfor %}
+        </div>
+    </div>
+</section>
+
+{% if contact_href %}
+<section class="fp-cta">
+    <div class="container text-center">
+        <span class="fp-eyebrow">Contact</span>
+        <h2 class="mt-3">Ai o întrebare despre program?</h2>
+        <p class="lead">Scrie-ne sau sună-ne — răspundem în zilele lucrătoare.</p>
+        <a class="fp-btn" href="{{ contact_href }}">Contactează-ne</a>
+    </div>
+</section>
+{% endif %}
 {% endblock %}
