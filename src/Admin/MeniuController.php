@@ -140,9 +140,11 @@ final class MeniuController
         // expirat, titlu gol, link invalid, document fără fișier) conținutul se
         // întoarce în editor prin `|raw`, deci HTML-ul brut din POST ar ajunge
         // executabil în pagina de admin.
-        if ($date['tip'] === 'pagina') {
-            $date['continut_html'] = \App\Support\Html::curata($date['continut_html']);
-        }
+        //
+        // NECONDIȚIONAT, nu doar pentru `tip === 'pagina'`: golirea câmpului
+        // pentru celelalte tipuri se face abia după validări, deci un POST cu
+        // `tip=dosar` și CSRF greșit ar re-randa payload-ul neatins.
+        $date['continut_html'] = \App\Support\Html::curata($date['continut_html']);
         // Părintele trebuie să existe și să fie din aceeași secțiune; altfel intrarea
         // ar deveni o rădăcină „fantomă”, invizibilă în arborele oricărei secțiuni.
         if ($date['parent_id'] !== null) {

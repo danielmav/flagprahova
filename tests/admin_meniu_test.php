@@ -37,6 +37,14 @@ try {
     ok('  dar textul permis rămâne', str_contains(corp($r), '<p>x</p>'));
     ok('  nimic salvat', (int) $pdo->query("SELECT COUNT(*) FROM meniu WHERE titlu = " . $pdo->quote("Pagina $marca"))->fetchColumn() === 0);
 
+    // Același POST, dar cu tip=dosar: golirea lui continut_html pentru tipurile
+    // non-pagina se face abia DUPĂ validări, deci sanitizarea trebuie să fie
+    // necondiționată — altfel payload-ul se întorcea neatins în editor.
+    $r = cerere('POST', '/admin/meniu/salveaza', ['_csrf' => 'gresit', 'sectiune_id' => $sid, 'parent_id' => '', 'titlu' => "Dosar $marca", 'tip' => 'dosar', 'continut_html' => '<p>x</p><script>alert(1)</script>']);
+    ok('dosar + CSRF greșit => formular re-randat', $r->getStatusCode() === 200 && str_contains(corp($r), 'Sesiunea a expirat'));
+    ok('  payload-ul nu apare în răspuns', !str_contains(corp($r), 'alert(1)'));
+    ok('  nimic salvat', (int) $pdo->query("SELECT COUNT(*) FROM meniu WHERE titlu = " . $pdo->quote("Dosar $marca"))->fetchColumn() === 0);
+
     // link fără http => eroare
     $r = cerere('POST', '/admin/meniu/salveaza', ['_csrf' => 'abc', 'sectiune_id' => $sid, 'parent_id' => $dosar['id'], 'titlu' => 'L', 'tip' => 'link', 'url' => 'ftp://x']);
     ok('link invalid => eroare', $r->getStatusCode() === 200 && str_contains(corp($r), 'Linkul trebuie să înceapă cu'));

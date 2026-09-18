@@ -34,7 +34,9 @@
 
             <div class="adm-camp" data-pentru="pagina">
                 <label class="form-label">Conținut</label>
-                <div id="f-editor" class="bg-white">{{ intrare.continut_html|raw }}</div>
+                {# `|raw` doar pentru pagini: pentru celelalte tipuri câmpul e oricum golit la
+                   salvare, deci un conținut ajuns aici vine dintr-un POST fabricat. #}
+                <div id="f-editor" class="bg-white">{% if intrare.tip == 'pagina' %}{{ intrare.continut_html|raw }}{% endif %}</div>
                 <textarea name="continut_html" id="f-continut" hidden>{{ intrare.continut_html }}</textarea>
                 <label class="form-label mt-3" for="f-sablon">Șablon</label>
                 <select class="form-select" id="f-sablon" name="sablon">
