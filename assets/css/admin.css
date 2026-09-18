@@ -17,3 +17,14 @@
 .adm-thumb{width:40px;height:40px;object-fit:cover;border-radius:4px}
 .adm-inline-input{min-width:220px}
 .adm-picker__rand{cursor:pointer}
+
+.adm-arbore { margin: 0; padding-left: 0; }
+.adm-arbore .adm-arbore { padding-left: 1.75rem; min-height: 6px; }
+.adm-nod__rand { display: flex; align-items: center; gap: .5rem; background: #fff; border: 1px solid #e3e8ee; border-radius: 6px; padding: .4rem .6rem; margin: .25rem 0; }
+.adm-nod__rand--ascuns { opacity: .6; }
+.adm-nod__grip { cursor: grab; color: #9aa5b1; user-select: none; }
+.adm-nod__titlu { flex: 1; color: #1b2430; text-decoration: none; }
+.adm-nod__actiuni { display: flex; gap: .25rem; }
+.sortable-ghost { opacity: .4; }
+.adm-picker__frame { width: 100%; height: 70vh; border: 0; }
+#f-editor { min-height: 320px; }

@@ -1,0 +1,72 @@
+{% extends 'admin/layout.twig' %}
+{% block title %}{{ intrare.id ? 'Editează intrarea' : 'Intrare nouă' }}{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">{{ intrare.id ? 'Editează intrarea' : 'Intrare nouă' }} <small class="text-muted">· {{ sectiune.titlu }}</small></h1>
+{% if eroare %}<div class="alert alert-danger" role="alert">{{ eroare }}</div>{% endif %}
+<form method="post" action="{{ base }}{{ admin_path }}/meniu/salveaza" id="f-intrare" data-tip="{{ intrare.tip }}" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <input type="hidden" name="id" value="{{ intrare.id }}">
+    <input type="hidden" name="sectiune_id" value="{{ sectiune.id }}">
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="mb-3"><label class="form-label" for="f-titlu">Titlu <span class="text-danger">*</span></label>
+                <input class="form-control" id="f-titlu" name="titlu" value="{{ intrare.titlu }}" required></div>
+            <div class="mb-3"><label class="form-label" for="f-tip">Tip</label>
+                <select class="form-select" id="f-tip" name="tip">
+                    {% set etichete = {document: 'Document (link către un fișier)', dosar: 'Dosar (doar grupează intrări)', pagina: 'Pagină (text cu imagini)', link: 'Link extern', galerie: 'Galerie foto'} %}
+                    {% for t in tipuri %}<option value="{{ t }}" {{ intrare.tip == t ? 'selected' }}>{{ etichete[t] }}</option>{% endfor %}
+                </select></div>
+
+            <div class="adm-camp" data-pentru="document">
+                <label class="form-label">Fișier <span class="text-danger">*</span></label>
+                <div class="d-flex gap-2 align-items-center">
+                    <input type="hidden" name="fisier_id" id="f-fisier-id" value="{{ intrare.fisier_id }}">
+                    <span class="form-control bg-light" id="f-fisier-nume">{{ fisier ? fisier.nume_afisat : 'Niciun fișier ales' }}</span>
+                    <button class="btn btn-outline-primary text-nowrap" type="button" data-picker="fisier">Alege din Fișiere</button>
+                </div>
+                <div class="form-text">Nu l-ai încărcat încă? Deschide „Alege din Fișiere” și încarcă-l acolo.</div>
+            </div>
+
+            <div class="adm-camp" data-pentru="link">
+                <label class="form-label" for="f-url">Adresa (URL) <span class="text-danger">*</span></label>
+                <input class="form-control" id="f-url" name="url" value="{{ intrare.url }}" placeholder="https://…">
+            </div>
+
+            <div class="adm-camp" data-pentru="pagina">
+                <label class="form-label">Conținut</label>
+                <div id="f-editor" class="bg-white">{{ intrare.continut_html|raw }}</div>
+                <textarea name="continut_html" id="f-continut" hidden>{{ intrare.continut_html }}</textarea>
+                <label class="form-label mt-3" for="f-sablon">Șablon</label>
+                <select class="form-select" id="f-sablon" name="sablon">
+                    <option value="standard" {{ intrare.sablon == 'standard' ? 'selected' }}>Standard</option>
+                    <option value="contact" {{ intrare.sablon == 'contact' ? 'selected' }}>Contact (adaugă formularul de contact sub text)</option>
+                </select>
+            </div>
+
+            <div class="adm-camp" data-pentru="galerie">
+                {% include 'admin/_galerie_camp.twig' ignore missing %}
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card card-body">
+                <div class="mb-3"><label class="form-label" for="f-parent">Se află sub</label>
+                    <select class="form-select" id="f-parent" name="parent_id">
+                        <option value="">— nivelul principal —</option>
+                        {% for p in parinti %}<option value="{{ p.id }}" {{ intrare.parent_id == p.id ? 'selected' }}>{{ p.eticheta }}</option>{% endfor %}
+                    </select></div>
+                <div class="mb-3"><label class="form-label" for="f-slug">Adresă (slug)</label>
+                    <input class="form-control" id="f-slug" name="slug" value="{{ intrare.slug }}" placeholder="se generează din titlu"></div>
+                <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="f-vizibil" name="vizibil" value="1" {{ intrare.vizibil ? 'checked' }}>
+                    <label class="form-check-label" for="f-vizibil">Vizibil pe site</label></div>
+                <button class="btn btn-primary w-100" type="submit">Salvează</button>
+                <a class="btn btn-link w-100" href="{{ base }}{{ admin_path }}/meniu?sectiune={{ sectiune.slug }}">Renunță</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="modal fade" id="adm-picker" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+    <div class="modal-header"><h2 class="h5 m-0">Alege un fișier</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Închide"></button></div>
+    <div class="modal-body p-0"><iframe id="adm-picker-frame" class="adm-picker__frame" title="Fișiere"></iframe></div>
+</div></div></div>
+{% endblock %}

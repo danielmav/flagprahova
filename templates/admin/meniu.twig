@@ -1,0 +1,20 @@
+{% extends 'admin/layout.twig' %}
+{% block title %}Meniu · {{ sectiune.titlu }}{% endblock %}
+{% block content %}
+<ul class="nav nav-tabs mb-3">
+    {% for s in sectiuni %}
+        <li class="nav-item"><a class="nav-link {{ s.id == sectiune.id ? 'active' }}" href="{{ base }}{{ admin_path }}/meniu?sectiune={{ s.slug }}">{{ s.titlu }}</a></li>
+    {% endfor %}
+</ul>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 m-0">Meniul secțiunii {{ sectiune.slug }}</h1>
+    <a class="btn btn-primary" href="{{ base }}{{ admin_path }}/meniu/nou?sectiune={{ sectiune.slug }}">+ Adaugă intrare</a>
+</div>
+<p class="text-muted small">Trage intrările ca să le reordonezi sau să le muți sub altă intrare. Se salvează automat.</p>
+<div id="adm-arbore" data-sectiune-id="{{ sectiune.id }}" data-url="{{ base }}{{ admin_path }}/meniu/reordoneaza">
+    <ol class="adm-arbore list-unstyled">
+        {% for nod in arbore %}{% include 'admin/_meniu_nod.twig' with {nod: nod, sectiune: sectiune} %}{% endfor %}
+    </ol>
+</div>
+<div id="adm-arbore-stare" class="small text-muted mt-2" aria-live="polite"></div>
+{% endblock %}

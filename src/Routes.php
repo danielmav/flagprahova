@@ -4,6 +4,7 @@ declare(strict_types=1);
 use App\Admin\AuthMiddleware;
 use App\Admin\FisiereController;
 use App\Admin\LoginController;
+use App\Admin\MeniuController;
 use Slim\App;
 use Slim\Views\Twig;
 
@@ -35,6 +36,14 @@ return function (App $app, Twig $twig, array $container): void {
         $g->post('/fisiere/editor',            fn($rq, $rs) => $fc()->editor($rq, $rs));
         $g->post('/fisiere/{id:[0-9]+}/redenumeste', fn($rq, $rs, $a) => $fc()->redenumeste($rq, $rs, $a));
         $g->post('/fisiere/{id:[0-9]+}/sterge',      fn($rq, $rs, $a) => $fc()->sterge($rq, $rs, $a));
-        // Task 5+: meniu, setari, utilizatori, mesaje
+
+        $mc = fn() => new MeniuController($twig, $container);
+        $g->get('/meniu',                     fn($rq, $rs) => $mc()->index($rq, $rs));
+        $g->get('/meniu/nou',                 fn($rq, $rs) => $mc()->nou($rq, $rs));
+        $g->post('/meniu/salveaza',           fn($rq, $rs) => $mc()->salveaza($rq, $rs));
+        $g->post('/meniu/reordoneaza',        fn($rq, $rs) => $mc()->reordoneaza($rq, $rs));
+        $g->get('/meniu/{id:[0-9]+}',         fn($rq, $rs, $a) => $mc()->editeaza($rq, $rs, $a));
+        $g->post('/meniu/{id:[0-9]+}/sterge', fn($rq, $rs, $a) => $mc()->sterge($rq, $rs, $a));
+        // Task 8+: setari, utilizatori, mesaje
     })->add(new AuthMiddleware($container['auth'], $adminPath, $basePath));
 };

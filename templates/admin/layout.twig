@@ -7,6 +7,7 @@
     <title>{% block title %}Administrare{% endblock %} · FLAG Prahova</title>
     <script>window.ADMIN_BASE={{ (base ~ admin_path)|json_encode|raw }};window.CSRF={{ csrf|json_encode|raw }};</script>
     <link rel="stylesheet" href="{{ base }}/assets/vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ base }}/assets/vendor/quill/quill.snow.css">
     <link rel="stylesheet" href="{{ base }}/assets/css/admin.css">
     {% block head %}{% endblock %}
 </head>
@@ -35,6 +36,8 @@
     {% block content %}{% endblock %}
 </main>
 <script src="{{ base }}/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="{{ base }}/assets/vendor/sortable/Sortable.min.js"></script>
+<script src="{{ base }}/assets/vendor/quill/quill.min.js"></script>
 <script src="{{ base }}/assets/js/admin.js" defer></script>
 {% block scripts %}{% endblock %}
 </body>
