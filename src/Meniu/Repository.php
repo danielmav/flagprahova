@@ -129,10 +129,17 @@ final class Repository
         }
         if (array_key_exists('parent_id', $date)) {
             $date['parent_id'] = $date['parent_id'] === '' || $date['parent_id'] === null ? null : (int) $date['parent_id'];
-            if ($date['parent_id'] === $id) {
+            if ($date['parent_id'] === $id || ($date['parent_id'] !== null && $this->esteDescendent($id, $date['parent_id']))) {
                 $date['parent_id'] = $curent['parent_id'];
             }
         }
+        if (array_key_exists('tip', $date)) {
+            $date['tip'] = in_array($date['tip'] ?? '', self::TIPURI, true) ? $date['tip'] : 'document';
+        }
+        if (array_key_exists('sablon', $date)) {
+            $date['sablon'] = in_array($date['sablon'] ?? '', self::SABLOANE, true) ? $date['sablon'] : 'standard';
+        }
+
         $set = [];
         $par = ['id' => $id];
         foreach (self::COLOANE as $c) {
@@ -147,13 +154,48 @@ final class Repository
         $this->pdo->prepare('UPDATE meniu SET ' . implode(', ', $set) . ' WHERE id = :id')->execute($par);
     }
 
+    /**
+     * Adevărat dacă $candidatId este $id însuși sau un descendent (la orice adâncime) al lui $id.
+     */
+    public function esteDescendent(int $id, int $candidatId): bool
+    {
+        if ($candidatId === $id) {
+            return true;
+        }
+        $vizitate = [];
+        $coada = [$id];
+        while ($coada !== []) {
+            $curent = array_pop($coada);
+            if (isset($vizitate[$curent])) {
+                continue;
+            }
+            $vizitate[$curent] = true;
+            foreach ($this->copii($curent) as $c) {
+                $cid = (int) $c['id'];
+                if ($cid === $candidatId) {
+                    return true;
+                }
+                $coada[] = $cid;
+            }
+        }
+        return false;
+    }
+
     public function numaraDescendenti(int $id): int
     {
-        $n = 0;
-        foreach ($this->copii($id) as $c) {
-            $n += 1 + $this->numaraDescendenti((int) $c['id']);
-        }
-        return $n;
+        $vizitate = [];
+        $numara = function (int $id) use (&$numara, &$vizitate): int {
+            if (isset($vizitate[$id])) {
+                return 0;
+            }
+            $vizitate[$id] = true;
+            $n = 0;
+            foreach ($this->copii($id) as $c) {
+                $n += 1 + $numara((int) $c['id']);
+            }
+            return $n;
+        };
+        return $numara($id);
     }
 
     public function sterge(int $id): int
@@ -170,14 +212,19 @@ final class Repository
         $st->execute(['s' => $sectiuneId]);
         $permise = array_flip(array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN)));
         $upd = $this->pdo->prepare('UPDATE meniu SET parent_id = :p, ordine = :o WHERE id = :id AND sectiune_id = :s');
+        $vazute = [];
         $this->pdo->beginTransaction();
         try {
-            $parcurge = function (array $noduri, ?int $parent) use (&$parcurge, $permise, $upd, $sectiuneId): void {
+            $parcurge = function (array $noduri, ?int $parent) use (&$parcurge, $permise, $upd, $sectiuneId, &$vazute): void {
                 foreach (array_values($noduri) as $i => $n) {
                     $id = (int) ($n['id'] ?? 0);
                     if (!isset($permise[$id])) {
                         throw new InvalidArgumentException("Intrarea $id nu aparține secțiunii $sectiuneId");
                     }
+                    if (isset($vazute[$id])) {
+                        throw new InvalidArgumentException("Intrarea $id apare de mai multe ori în arbore");
+                    }
+                    $vazute[$id] = true;
                     $upd->execute(['p' => $parent, 'o' => $i, 'id' => $id, 's' => $sectiuneId]);
                     $parcurge((array) ($n['copii'] ?? []), $id);
                 }

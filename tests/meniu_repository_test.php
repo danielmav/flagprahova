@@ -34,6 +34,11 @@ try {
     foreach ($viz as $n) { if ((int) $n['id'] === $a) { $nodAv = $n; } }
     ok('arbore doarVizibile exclude C', $nodAv !== null && count($nodAv['copii'][0]['copii']) === 1);
 
+    // actualizeaza: mutarea lui A sub propriul nepot (C, la acest moment A → B → C) trebuie refuzată silențios
+    ok('esteDescendent(A, C) = true înainte de reordonare', $repo->esteDescendent($a, $c) === true);
+    $repo->actualizeaza($a, ['parent_id' => $c]);
+    ok('actualizeaza: mutarea lui A sub nepotul C păstrează parent_id', $repo->gaseste($a)['parent_id'] === null);
+
     // reordoneaza: D înaintea lui C, ambele mutate direct sub A
     $repo->reordoneaza($sid, [['id' => $a, 'copii' => [['id' => $d, 'copii' => []], ['id' => $c, 'copii' => []], ['id' => $b, 'copii' => []]]]]);
     ok('reordoneaza: D are parent A și ordine 0', (int) $repo->gaseste($d)['parent_id'] === $a && (int) $repo->gaseste($d)['ordine'] === 0);
@@ -41,8 +46,42 @@ try {
     $arunca = false;
     try { $repo->reordoneaza($sid, [['id' => 999999999, 'copii' => []]]); } catch (InvalidArgumentException) { $arunca = true; }
     ok('reordoneaza refuză id străin', $arunca);
+    $aruncaDuplicat = false;
+    try {
+        $repo->reordoneaza($sid, [['id' => $a, 'copii' => [
+            ['id' => $b, 'copii' => []],
+            ['id' => $c, 'copii' => [['id' => $b, 'copii' => []]]],
+        ]]]);
+    } catch (InvalidArgumentException) {
+        $aruncaDuplicat = true;
+    }
+    ok('reordoneaza refuză id duplicat în payload', $aruncaDuplicat);
 
     ok('numaraDescendenti(A) = 3', $repo->numaraDescendenti($a) === 3);
+
+    // fisierFolosit: o intrare cu fisier_id, una cu calea în continut_html, și niciuna pentru un fișier neutilizat
+    $caleFisier = 'uploads/test-' . $marca . '.pdf';
+    $pdo->prepare('INSERT INTO fisiere (nume_afisat, cale, mime, marime) VALUES (:n, :c, :m, 0)')
+        ->execute(['n' => "Fisier $marca", 'c' => $caleFisier, 'm' => 'application/pdf']);
+    $fisierId = (int) $pdo->lastInsertId();
+    $caleFisierNefolosit = 'uploads/test-nefolosit-' . $marca . '.pdf';
+    $pdo->prepare('INSERT INTO fisiere (nume_afisat, cale, mime, marime) VALUES (:n, :c, :m, 0)')
+        ->execute(['n' => "Fisier nefolosit $marca", 'c' => $caleFisierNefolosit, 'm' => 'application/pdf']);
+    $fisierNefolositId = (int) $pdo->lastInsertId();
+    try {
+        $eViaFisierId = $repo->creeaza(['sectiune_id' => $sid, 'parent_id' => null, 'titlu' => "Doc fisier $marca", 'slug' => '', 'tip' => 'document', 'fisier_id' => $fisierId]);
+        $fViaContinut = $repo->creeaza(['sectiune_id' => $sid, 'parent_id' => null, 'titlu' => "Pagina cu link $marca", 'slug' => '', 'tip' => 'pagina', 'continut_html' => '<a href="/' . $caleFisier . '">descarcă</a>']);
+        $creati = array_merge($creati, [$eViaFisierId, $fViaContinut]);
+
+        $folosit = $repo->fisierFolosit($fisierId);
+        $idsFolosit = array_map(static fn (array $r): int => (int) $r['id'], $folosit);
+        ok('fisierFolosit găsește intrarea cu fisier_id', in_array($eViaFisierId, $idsFolosit, true));
+        ok('fisierFolosit găsește intrarea cu calea în continut_html', in_array($fViaContinut, $idsFolosit, true));
+        ok('fisierFolosit întoarce [] pentru un fișier neutilizat', $repo->fisierFolosit($fisierNefolositId) === []);
+    } finally {
+        $pdo->exec("DELETE FROM fisiere WHERE id IN ($fisierId, $fisierNefolositId)");
+    }
+
     ok('sterge(A) șterge 4', $repo->sterge($a) === 4);
     ok('după ștergere B lipsește', $repo->gaseste($b) === null);
     $creati = [];
