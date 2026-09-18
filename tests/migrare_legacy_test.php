@@ -30,6 +30,10 @@ ok('atasamenteCai', $l->atasamenteCai([2903, 2947]) === [2903 => '2022/10/Instru
 
 ok('caleDinUrl relativ', Legacy::caleDinUrl('/wp-content/uploads/2021/09/POESP%20-%20R3.pdf') === '2021/09/POESP - R3.pdf');
 ok('caleDinUrl absolut http', Legacy::caleDinUrl('http://www.flagprahova.ro/wp-content/uploads/2017/08/Calendar%20Estimativ-2.jpg') === '2017/08/Calendar Estimativ-2.jpg');
+// Spațiile INTERIOARE nu se normalizează: WP are atașamente cu spațiu dublu în
+// nume, iar colapsarea lor ar rupe potrivirea cu `fisiere.legacy_url` (documentele
+// 334 și 423 din meniul vechi).
+ok('caleDinUrl păstrează spațiul dublu', Legacy::caleDinUrl('/wp-content/uploads/2019/06/anunt%20prelungire%20%20apel%20M1.pdf') === '2019/06/anunt prelungire  apel M1.pdf');
 ok('caleDinUrl folder => null', Legacy::caleDinUrl('/wp-content/uploads/2017/08/') === null);
 ok('caleDinUrl # => null', Legacy::caleDinUrl('#') === null);
 ok('caleDinUrl http://ab => null', Legacy::caleDinUrl('http://ab') === null);

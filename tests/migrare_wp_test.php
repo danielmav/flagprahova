@@ -28,6 +28,7 @@ $acasaVechi = $pdo->query('SELECT slug, acasa_html FROM sectiuni')->fetchAll(PDO
 $meniuVechi = array_flip(array_map('intval', $pdo->query('SELECT id FROM meniu')->fetchAll(PDO::FETCH_COLUMN)));
 $fisiereTest = [];
 $legacyUrlVechi = []; // id => legacy_url, pentru rândurile reale pe care testul le strică temporar
+$slugVechi = [];      // id => slug, idem (testul rescrie slug-ul ca să verifice că migrarea nu-l resetează)
 // Fișiere false pentru căile referite de meniu și de galerii care nu au corespondent real;
 // cu arhiva importată, lista e aproape goală.
 $cai = [];
@@ -72,6 +73,8 @@ try {
     ok('  nicio imagine lipsă', $r['imagini_lipsa'] === 0);
     $contact = $m->gasesteDupaLegacy(175);
     ok('175 Contact => pagina sablon contact cu ambele persoane', $contact && $contact['sablon'] === 'contact' && str_contains($contact['continut_html'], 'Olteanu'));
+    // Numerele de telefon rămân apelabile după `Html::curata()` (schema `tel:` e permisă).
+    ok('  175 Contact păstrează href="tel:+40762609685"', str_contains($contact['continut_html'], 'href="tel:+40762609685"'));
     $c21 = $m->gasesteDupaLegacy(9009);
     ok('9009 Contact 2021 => doar Laura', $c21 && $c21['sablon'] === 'contact' && str_contains($c21['continut_html'], 'Manolache') && !str_contains($c21['continut_html'], 'Olteanu'));
     $u21 = $m->gasesteDupaLegacy(9008);
@@ -82,6 +85,13 @@ try {
     $cons = $m->gasesteDupaLegacy(280);
     ok('280 Consultare publică => pagina din builder html (nu din post_content-ul spam)', $cons && $cons['tip'] === 'pagina' && str_contains($cons['continut_html'], 'Consultare publică') && !str_contains($cons['continut_html'], 'podcasts'));
     ok('spam eliminat > 0', $r['spam'] > 0);
+    // Lista intrărilor sărite e fixată: orice document pierdut la migrare (fișier
+    // negăsit după `legacy_url`) ar adăuga un id nou aici și ar pica testul.
+    // 176 („Acasă”) NU apare: pagina 75 e sărită tăcut prin `Harta::PAGINI_SARITE`
+    // (`continue` fără raport), textul ei ajungând în `sectiuni.acasa_html`.
+    $saritIds = array_values(array_unique(array_map(static fn(string $s): int => (int) $s, $r['sarit'])));
+    sort($saritIds);
+    ok('sarite: exact [333] — ' . implode(' | ', $r['sarit']), $saritIds === [333]);
     // Meniul vechi nu are nicio intrare clasificată `link` (toate URL-urile externe
     // erau spam, deja eliminat), deci lista de hosturi externe rămâne goală.
     ok('niciun link extern în meniul vechi => externe gol', (int) $pdo->query("SELECT COUNT(*) FROM meniu WHERE tip='link' AND legacy_id IS NOT NULL")->fetchColumn() === 0 && $r['externe'] === []);
@@ -93,7 +103,9 @@ try {
     ok('re-rulare: 0 creat, nimic duplicat', $r2['creat'] === 0 && (int) $pdo->query("SELECT COUNT(*) FROM meniu WHERE legacy_id IS NOT NULL")->fetchColumn() === $n20 + $n21);
     ok('re-rulare: slug-ul nu se schimbă', $m->gasesteDupaLegacy(579)['slug'] === $org['slug']);
 
-    // Slug editat manual din admin: migrarea nu îl resetează.
+    // Slug editat manual din admin: migrarea nu îl resetează. Intrarea 579 poate fi
+    // una REALĂ (bază deja migrată), deci salvăm slug-ul și îl punem la loc în `finally`.
+    $slugVechi[(int) $org['id']] = (string) $org['slug'];
     $pdo->prepare('UPDATE meniu SET slug = :sl WHERE id = :id')->execute(['sl' => 'organigrama-editata-manual', 'id' => (int) $org['id']]);
     migreaza($ctx, false);
     ok('re-rulare: slug-ul editat manual rămâne', $m->gasesteDupaLegacy(579)['slug'] === 'organigrama-editata-manual');
@@ -118,6 +130,9 @@ try {
     $r5 = migreaza($ctx, false);
     ok('atașament fără fișier => imagini_lipsa = 1', $r5['imagini_lipsa'] === 1 && count($ctx['galerie']->imagini($gid)) === 39);
 } finally {
+    foreach ($slugVechi as $id => $sl) {
+        $pdo->prepare('UPDATE meniu SET slug = :sl WHERE id = :id')->execute(['sl' => $sl, 'id' => $id]);
+    }
     foreach ($legacyUrlVechi as $id => $l) {
         $pdo->prepare('UPDATE fisiere SET legacy_url = :l WHERE id = :id')->execute(['l' => $l, 'id' => $id]);
     }

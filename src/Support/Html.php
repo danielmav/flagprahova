@@ -16,8 +16,8 @@ final class Html
         'iframe' => ['src', 'width', 'height', 'allowfullscreen'],
     ];
 
-    /** Scheme acceptate în href/src: http(s), mailto, cale absolută (nu „//”), ancoră, cale relativă. */
-    private const URL_PERMIS = '#^(https?://|mailto:|/(?!/)|[\#?]|[^/:?\#]+(?:[?\#/]|$))#i';
+    /** Scheme acceptate în href/src: http(s), mailto, tel, cale absolută (nu „//”), ancoră, cale relativă. */
+    private const URL_PERMIS = '#^(https?://|mailto:|tel:|/(?!/)|[\#?]|[^/:?\#]+(?:[?\#/]|$))#i';
 
     public static function curata(string $html): string
     {

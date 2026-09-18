@@ -122,9 +122,14 @@ final class Legacy
         return $cale;
     }
 
+    /**
+     * Doar `trim` + `rawurldecode` — spațiile INTERIOARE se păstrează exact cum
+     * sunt. Unele atașamente WP au spații duble în numele fișierului (ex.
+     * `2019/06/anunt prelungire  apel M1.pdf`, codat `%20%20`), iar colapsarea
+     * lor ar rupe potrivirea cu `fisiere.legacy_url` și ar pierde documentele.
+     */
     private static function normalizeazaUrl(string $url): string
     {
-        $u = trim(rawurldecode($url));
-        return preg_replace('/\s+/u', ' ', $u) ?? $u;
+        return trim(rawurldecode($url));
     }
 }

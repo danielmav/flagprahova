@@ -36,4 +36,5 @@ Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`. Planur
 - Idempotență pe `legacy_id` (`meniu`) / `legacy_url` (`fisiere`): re-rularea oricărui script nu duplică rânduri; `migrate_wp.php` actualizează, nu re-creează.
 - `Harta::SET_2021` decide ce intrări vechi trec în secțiunea 2021-2027; schimbarea ei mută automat intrările la următoarea migrare.
 - `reset_continut.php --da` rulează DOAR cu `APP_ENV=dev`: șterge galerii/meniu/fișiere și reface `setari` din `seed.php`. Fișierele de pe disc NU se șterg — `import_fisiere.php` le (re)înregistrează după reset fără să le rescrie (verifică potrivirea pe conținut, nu doar pe nume, ca să nu creeze dubluri „-2”).
+- URL-urile WP pot conține spații DUBLE (`%20%20`, ex. `2019/06/anunt prelungire  apel M1.pdf`). `Legacy::normalizeazaUrl()` face doar `trim` + `rawurldecode`, NU colapsează spațiile: altfel potrivirea cu `fisiere.legacy_url` cade și documentele (334, 423) se pierd tăcut.
 - `tests/migrare_wp_test.php` rulează pe baza REALĂ și șterge doar rândurile `legacy_id` apărute în timpul testului; se rulează fie ÎNAINTE de migrarea reală, fie DUPĂ un `reset_continut.php`.

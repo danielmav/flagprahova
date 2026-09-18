@@ -44,10 +44,24 @@ function importa_fisiere(ZipArchive $zip, string $dest, Fisiere $repo, ?string $
         $existent = gaseste_dupa_legacy($repo, $legacy);
         if ($existent !== null && is_file(rtrim($dest, '/\\') . '/' . $existent['cale'])) { $r['existente']++; continue; }
         if ($limita > 0 && $r['importate'] >= $limita) { break; }
-        $continut = $zip->getFromIndex($i);
-        if ($continut === false) { $r['erori'][] = "$legacy: nu pot citi din arhivă"; continue; }
         $dir = rtrim($dest, '/\\') . "/$luna";
         if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) { $r['erori'][] = "$legacy: nu pot crea $dir"; continue; }
+        // Intrarea se copiază în flux într-un temporar din ACELAȘI folder (deci
+        // `rename()` rămâne pe același volum), nu în memorie: cel mai mare atașament
+        // din arhivă are ~334 MB, iar `getFromIndex()` l-ar încărca integral.
+        // Mărimea și md5-ul se iau apoi de pe disc (`filesize` / `md5_file`).
+        $tmp = "$dir/.import-tmp-" . getmypid();
+        $sursa = $zip->getStream($nume);
+        if ($sursa === false) { $r['erori'][] = "$legacy: nu pot citi din arhivă"; continue; }
+        $tinta = fopen($tmp, 'wb');
+        if ($tinta === false) { fclose($sursa); $r['erori'][] = "$legacy: nu pot scrie temporarul"; continue; }
+        $copiat = stream_copy_to_stream($sursa, $tinta);
+        fclose($sursa);
+        fclose($tinta);
+        if ($copiat === false) { @unlink($tmp); $r['erori'][] = "$legacy: nu pot citi din arhivă"; continue; }
+        clearstatcache(true, $tmp);
+        $marime = (int) filesize($tmp);
+        $md5 = (string) md5_file($tmp);
         $sigur = Upload::numeSigur($fisier);
         $baza = pathinfo($sigur, PATHINFO_FILENAME);
         $cand = $sigur;
@@ -68,8 +82,8 @@ function importa_fisiere(ZipArchive $zip, string $dest, Fisiere $repo, ?string $
         $reuseFaraScriere = false;
         for ($n = 1; is_file("$dir/$cand"); $n++) {
             if ($repo->gasesteDupaCale("$luna/$cand") === null
-                && filesize("$dir/$cand") === strlen($continut)
-                && hash_equals((string) md5_file("$dir/$cand"), md5($continut))
+                && filesize("$dir/$cand") === $marime
+                && hash_equals((string) md5_file("$dir/$cand"), $md5)
             ) {
                 $reuseFaraScriere = true;
                 break;
@@ -77,18 +91,20 @@ function importa_fisiere(ZipArchive $zip, string $dest, Fisiere $repo, ?string $
             $cand = "$baza-" . ($n + 1) . ".$e";
         }
         if ($reuseFaraScriere) {
-            $mime = $finfo->file("$dir/$cand") ?: 'application/octet-stream';
-        } else {
-            if (file_put_contents("$dir/$cand", $continut) === false) { $r['erori'][] = "$legacy: nu pot scrie"; continue; }
-            $mime = $finfo->buffer(substr($continut, 0, 8192)) ?: 'application/octet-stream';
+            @unlink($tmp);
+        } elseif (!rename($tmp, "$dir/$cand")) {
+            @unlink($tmp);
+            $r['erori'][] = "$legacy: nu pot scrie";
+            continue;
         }
+        $mime = $finfo->file("$dir/$cand") ?: 'application/octet-stream';
         if ($mime === 'application/zip' && in_array($e, ['docx', 'xlsx', 'pptx', 'odt'], true)) {
             $mimeOffice = Upload::mimeOffice("$dir/$cand", $e);
             if ($mimeOffice !== null) { $mime = $mimeOffice; }
         }
         $repo->inregistreaza([
             'nume_afisat' => $fisier, 'cale' => "$luna/$cand", 'mime' => $mime,
-            'marime' => strlen($continut), 'incarcat_de' => null, 'legacy_url' => $legacy,
+            'marime' => $marime, 'incarcat_de' => null, 'legacy_url' => $legacy,
         ]);
         $r['importate']++;
     }
