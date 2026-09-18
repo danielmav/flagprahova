@@ -11,6 +11,8 @@
 /storage/logs/*
 !/storage/cache/.gitkeep
 !/storage/logs/.gitkeep
+/storage/shots/*
+!/storage/shots/.gitkeep
 error_log
 node_modules/
 .claude/settings.local.json
