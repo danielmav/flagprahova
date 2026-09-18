@@ -17,6 +17,9 @@ final class Repository
 
     public function inregistreaza(array $r): int
     {
+        // `nume_afisat` are 255: un nume de fișier mai lung ar arunca la INSERT
+        // și uploadul s-ar termina în 500, deși fișierul e deja pe disc.
+        $r['nume_afisat'] = mb_substr((string) $r['nume_afisat'], 0, 255);
         $ex = $this->gasesteDupaCale((string) $r['cale']);
         if ($ex !== null) {
             $this->pdo->prepare('UPDATE fisiere SET nume_afisat = :n, mime = :m, marime = :s, legacy_url = COALESCE(:lg, legacy_url) WHERE id = :id')

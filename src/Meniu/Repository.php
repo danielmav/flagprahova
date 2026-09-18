@@ -90,7 +90,9 @@ final class Repository
 
     public function slugUnic(int $sectiuneId, string $slug, ?int $exceptId = null): string
     {
-        $baza = slugify($slug);
+        // Coloana `slug` are 160: tăiem baza la 150 ca sufixul de dezambiguizare
+        // („-2”… „-999”, sau „-abcdef”) să încapă fără să reteze rândul la INSERT.
+        $baza = mb_substr(slugify($slug), 0, 150);
         $cand = $baza;
         for ($i = 2; $i < 1000; $i++) {
             $st = $this->pdo->prepare('SELECT id FROM meniu WHERE sectiune_id = :s AND slug = :sl AND id <> :ex LIMIT 1');

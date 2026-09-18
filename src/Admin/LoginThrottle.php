@@ -67,6 +67,12 @@ final class LoginThrottle
         try {
             $stmt = $this->pdo->prepare('INSERT INTO login_incercari (ip_hash, scope) VALUES (:h, :sc)');
             $stmt->execute(['h' => $ipHash, 'sc' => $this->scope]);
+            // Curățenie ocazională (~1 la 50 de scrieri): fereastra e de minute,
+            // deci orice rând mai vechi de o zi e balast. Fără cron, fără să
+            // plătim un DELETE la fiecare încercare.
+            if (random_int(1, 50) === 1) {
+                $this->pdo->exec('DELETE FROM login_incercari WHERE la < NOW() - INTERVAL 1 DAY');
+            }
         } catch (Throwable $e) {
             error_log('[flagprahova][throttle] nu am putut inregistra incercarea: ' . $e->getMessage());
         }

@@ -15,8 +15,13 @@ deployment:
     - export PHP=/opt/cpanel/ea-php83/root/usr/bin/php
     - cd $REPO && $PHP /home/flagprah/composer.phar install --no-dev --optimize-autoloader --no-interaction
     - /bin/mkdir -p $DEPLOYPATH/storage/cache/twig $DEPLOYPATH/storage/logs $DEPLOYPATH/fisiere
+    # fisiere/.htaccess blocheaza executia PHP in directorul de uploaduri. Continutul
+    # lui vine din repo (nu-l scrie nimeni pe host), deci se copiaza la fiecare deploy:
+    # fara el, un fisier urcat cu extensie PHP ar deveni cod executabil.
+    - /bin/cp -a $REPO/fisiere/.htaccess $DEPLOYPATH/fisiere/
     # rsync nu e disponibil pe acest host => copiem cu cp (rm dest intai, ca sa nu se cuibareasca).
-    # Nu atingem: .env, storage/, fisiere/, .htaccess, .user.ini, php.ini, cgi-bin, .well-known.
+    # Nu atingem: .env, storage/, continutul din fisiere/ (doar .htaccess-ul de mai sus),
+    # .htaccess-ul din docroot, .user.ini, php.ini, cgi-bin, .well-known.
     - /bin/rm -rf $DEPLOYPATH/src $DEPLOYPATH/templates $DEPLOYPATH/config $DEPLOYPATH/assets $DEPLOYPATH/vendor
     - /bin/cp -a $REPO/src $REPO/templates $REPO/config $REPO/assets $REPO/vendor $DEPLOYPATH/
     # NU copiem .htaccess: pe acest host MultiPHP Manager scrie blocul de handler PHP

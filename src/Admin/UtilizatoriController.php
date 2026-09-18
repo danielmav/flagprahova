@@ -48,7 +48,11 @@ final class UtilizatoriController
         $in    = (array) $request->getParsedBody();
         $email = strtolower(trim((string) ($in['email'] ?? '')));
         $nume  = trim((string) ($in['nume'] ?? ''));
-        if (!$this->csrfOk($request) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (!$this->csrfOk($request)) {
+            $this->flash('eroare', 'Sesiunea a expirat. Reîncarcă pagina.');
+            return $this->redirect($response, '/utilizatori');
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->flash('eroare', 'Adresa de email nu e validă.');
             return $this->redirect($response, '/utilizatori');
         }
@@ -57,7 +61,7 @@ final class UtilizatoriController
             return $this->redirect($response, '/utilizatori');
         }
         $id = $this->utilizatori->creeaza($email, $nume);
-        $trimis = $this->trimiteLink($id);
+        $trimis = $this->trimiteLink($id, PasswordTokenRepository::TTL_ZILE * 24 * 60);
         $this->flash(
             $trimis ? 'ok' : 'eroare',
             $trimis
@@ -70,7 +74,7 @@ final class UtilizatoriController
     public function trimiteLinkActiune(Request $request, Response $response, array $args): Response
     {
         if ($this->csrfOk($request) && $this->utilizatori->gaseste((int) $args['id']) !== null) {
-            $ok = $this->trimiteLink((int) $args['id']);
+            $ok = $this->trimiteLink((int) $args['id'], PasswordTokenRepository::TTL_ZILE * 24 * 60);
             $this->flash($ok ? 'ok' : 'eroare', $ok ? 'Link trimis.' : 'Emailul nu a putut fi trimis.');
         }
         return $this->redirect($response, '/utilizatori');
@@ -82,7 +86,11 @@ final class UtilizatoriController
         if (!$this->csrfOk($request)) {
             return $this->redirect($response, '/utilizatori');
         }
-        if ($id === (int) ($this->auth->user()['id'] ?? 0)) {
+        // Întâi „nu există": `sterge()` întoarce false și pentru un id inexistent,
+        // iar mesajul „ultimul cont" ar fi atunci pur și simplu fals.
+        if ($this->utilizatori->gaseste($id) === null) {
+            $this->flash('eroare', 'Contul nu există.');
+        } elseif ($id === (int) ($this->auth->user()['id'] ?? 0)) {
             $this->flash('eroare', 'Nu îți poți șterge propriul cont.');
         } elseif (!$this->utilizatori->sterge($id)) {
             $this->flash('eroare', 'Nu poți șterge ultimul cont.');
@@ -100,8 +108,9 @@ final class UtilizatoriController
      */
     public function parolaUitata(Request $request, Response $response): Response
     {
+        $valabilitate = self::valabilitate(PasswordTokenRepository::TTL_RESETARE_MINUTE);
         if ($request->getMethod() === 'GET') {
-            return $this->render($response, 'admin/parola_uitata.twig', ['trimis' => false, 'utilizator' => null]);
+            return $this->render($response, 'admin/parola_uitata.twig', ['trimis' => false, 'utilizator' => null, 'valabilitate' => $valabilitate]);
         }
         $start = (float) hrtime(true);
         $ip = ip_hash($request->getServerParams()['REMOTE_ADDR'] ?? null);
@@ -110,12 +119,12 @@ final class UtilizatoriController
             $email = strtolower(trim((string) (((array) $request->getParsedBody())['email'] ?? '')));
             $u = $this->utilizatori->gasesteDupaEmail($email);
             if ($u !== null) {
-                $this->trimiteLink((int) $u['id']);
+                $this->trimiteLink((int) $u['id'], PasswordTokenRepository::TTL_RESETARE_MINUTE);
             }
         }
         // În TOATE ramurile POST, inclusiv CSRF respins și throttle.
         $this->asteaptaPanaLaPrag($start);
-        return $this->render($response, 'admin/parola_uitata.twig', ['trimis' => true, 'utilizator' => null]);
+        return $this->render($response, 'admin/parola_uitata.twig', ['trimis' => true, 'utilizator' => null, 'valabilitate' => $valabilitate]);
     }
 
     /** Rută publică: setarea parolei din link. */
@@ -152,25 +161,50 @@ final class UtilizatoriController
      * Emite un token și trimite linkul. Invitația ANTERIOARĂ moare abia după
      * ce emailul a plecat cu adevărat: dacă SMTP-ul e căzut, omul rămâne cu
      * linkul vechi, în loc să rămână fără niciunul.
+     *
+     * `$ttlMinute` vine de la flux (invitație vs. „parolă uitată") și e și
+     * durata scrisă în DB, și textul din email — o singură sursă de adevăr.
      */
-    private function trimiteLink(int $uid): bool
+    private function trimiteLink(int $uid, int $ttlMinute): bool
     {
         $u = $this->utilizatori->gaseste($uid);
         if ($u === null) {
             return false; // niciun token pentru un cont care nu există
         }
-        $raw = $this->tokens->issue($uid, false);
+        $raw = $this->tokens->issue($uid, false, $ttlMinute);
         if ($raw === null) {
             return false;
         }
         $link = $this->settings['app']['url'] . $this->settings['app']['base_path'] . $this->adminPath() . '/parola/' . $raw;
-        $html = $this->twig->fetch('mail/parola.twig', ['nume' => $u['nume'], 'link' => $link, 'zile' => PasswordTokenRepository::TTL_ZILE]);
+        $html = $this->twig->fetch('mail/parola.twig', [
+            'nume' => $u['nume'],
+            'link' => $link,
+            'valabilitate' => self::valabilitate($ttlMinute),
+        ]);
         if (!$this->mailer->send((string) $u['email'], 'Setarea parolei — administrare FLAG Prahova', $html)) {
             $this->tokens->invalideazaToken($raw);
             return false;
         }
         $this->tokens->pastreazaDoar($uid, $raw);
         return true;
+    }
+
+    /**
+     * Durata unui link, în românește: „30 de minute”, „7 zile”. Aceeași valoare
+     * ajunge și în email, și în textul paginii — ca să nu promitem altceva
+     * decât scrie în `expira_la`.
+     */
+    private static function valabilitate(int $ttlMinute): string
+    {
+        if ($ttlMinute >= 24 * 60) {
+            $zile = intdiv($ttlMinute, 24 * 60);
+            return $zile === 1 ? 'o zi' : "$zile zile";
+        }
+        if ($ttlMinute >= 60) {
+            $ore = intdiv($ttlMinute, 60);
+            return $ore === 1 ? 'o oră' : ($ore < 20 ? "$ore ore" : "$ore de ore");
+        }
+        return $ttlMinute === 1 ? 'un minut' : ($ttlMinute < 20 ? "$ttlMinute minute" : "$ttlMinute de minute");
     }
 
     /**

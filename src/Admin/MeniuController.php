@@ -32,6 +32,9 @@ final class MeniuController
     private function sectiuneCurenta(Request $request, ?int $id = null): array
     {
         $sectiuni = $this->meniu->sectiuni();
+        if ($sectiuni === []) {
+            throw new \RuntimeException('Nu există secțiuni. Rulează database/seed.php.');
+        }
         $slug = (string) ($request->getQueryParams()['sectiune'] ?? '');
         foreach ($sectiuni as $s) {
             if (($id !== null && (int) $s['id'] === $id) || ($id === null && $s['slug'] === $slug)) {
@@ -122,15 +125,24 @@ final class MeniuController
         $date = [
             'id' => $id, 'sectiune_id' => (int) $sec['id'],
             'parent_id' => ($in['parent_id'] ?? '') === '' ? null : (int) $in['parent_id'],
-            'titlu' => trim((string) ($in['titlu'] ?? '')),
-            'slug'  => trim((string) ($in['slug'] ?? '')),
+            // Tăiem la lungimile coloanelor: un câmp mai lung ar face INSERT-ul să
+            // arunce și cererea s-ar termina în 500, în loc de o salvare curată.
+            'titlu' => mb_substr(trim((string) ($in['titlu'] ?? '')), 0, 255),
+            'slug'  => mb_substr(trim((string) ($in['slug'] ?? '')), 0, 160),
             'tip'   => in_array($in['tip'] ?? '', Meniu::TIPURI, true) ? $in['tip'] : 'document',
-            'url'   => trim((string) ($in['url'] ?? '')),
+            'url'   => mb_substr(trim((string) ($in['url'] ?? '')), 0, 500),
             'fisier_id' => (int) ($in['fisier_id'] ?? 0) ?: null,
             'sablon' => in_array($in['sablon'] ?? '', Meniu::SABLOANE, true) ? $in['sablon'] : 'standard',
             'vizibil' => (int) (($in['vizibil'] ?? '0') === '1'),
             'continut_html' => (string) ($in['continut_html'] ?? ''),
         ];
+        // Sanitizăm ÎNAINTE de orice `formular()`: la re-randarea cu eroare (CSRF
+        // expirat, titlu gol, link invalid, document fără fișier) conținutul se
+        // întoarce în editor prin `|raw`, deci HTML-ul brut din POST ar ajunge
+        // executabil în pagina de admin.
+        if ($date['tip'] === 'pagina') {
+            $date['continut_html'] = \App\Support\Html::curata($date['continut_html']);
+        }
         // Părintele trebuie să existe și să fie din aceeași secțiune; altfel intrarea
         // ar deveni o rădăcină „fantomă”, invizibilă în arborele oricărei secțiuni.
         if ($date['parent_id'] !== null) {
@@ -154,8 +166,6 @@ final class MeniuController
         if ($date['tip'] !== 'document') { $date['fisier_id'] = null; }
         if ($date['tip'] !== 'link') { $date['url'] = ''; }
         if ($date['tip'] !== 'pagina') { $date['continut_html'] = ''; $date['sablon'] = 'standard'; }
-
-        if ($date['tip'] === 'pagina') { $date['continut_html'] = \App\Support\Html::curata($date['continut_html']); }
 
         if ($id === null) {
             $id = $this->meniu->creeaza($date);

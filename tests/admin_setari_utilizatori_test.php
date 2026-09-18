@@ -12,11 +12,14 @@ try {
     $r = cerere('GET', '/admin/setari');
     ok('GET setari => 200 cu câmpul email', $r->getStatusCode() === 200 && str_contains(corp($r), 'name="contact_email_destinatar"'));
     $vechi = (new App\Setari\Repository($db))->get('landing_titlu');
+    $vechiEmail = (new App\Setari\Repository($db))->get('contact_email_destinatar');
     $r = cerere('POST', '/admin/setari', ['_csrf' => 'abc', 'contact_email_destinatar' => 'x@y.ro', 'landing_titlu' => 'Titlu test', 'landing_text' => 't', 'footer_text' => 'f']);
     ok('POST setari => 302', $r->getStatusCode() === 302);
     ok('  valoarea salvată', (new App\Setari\Repository($db))->get('landing_titlu') === 'Titlu test');
     (new App\Setari\Repository($db))->set('landing_titlu', $vechi);
-    (new App\Setari\Repository($db))->set('contact_email_destinatar', 'flagprahova@gmail.com');
+    // Restaurăm exact ce era înainte, nu o valoare hard-codată: altfel testul ar
+    // rescrie în tăcere setarea reală a sitului pe care rulează.
+    (new App\Setari\Repository($db))->set('contact_email_destinatar', $vechiEmail);
 
     // Utilizatori: adaugă => cont fără parolă + email cu link
     $dim0 = is_file($log) ? filesize($log) : 0;
@@ -25,6 +28,9 @@ try {
     $u2 = $pdo->query('SELECT * FROM utilizatori WHERE email = ' . $pdo->quote($email2))->fetch();
     ok('  cont creat cu parola_hash gol', $u2 && $u2['parola_hash'] === '');
     ok('  token emis', (int) $pdo->query('SELECT COUNT(*) FROM parola_tokens WHERE utilizator_id = ' . (int) $u2['id'])->fetchColumn() === 1);
+    // Invitația de cont e valabilă 7 zile (spre deosebire de „parolă uitată”, mai jos).
+    ok('  invitația e valabilă ≥ 6 zile', (int) $pdo->query('SELECT COUNT(*) FROM parola_tokens WHERE utilizator_id = ' . (int) $u2['id']
+        . ' AND folosit_la IS NULL AND expira_la >= NOW() + INTERVAL 6 DAY')->fetchColumn() === 1);
     clearstatcache();
     ok('  mail scris în mail.log (SMTP gol pe dev)', is_file($log) && filesize($log) > $dim0 && str_contains(file_get_contents($log), '/admin/parola/'));
 
@@ -47,6 +53,14 @@ try {
     $r1 = cerere('POST', '/admin/parola-uitata', ['_csrf' => 'abc', 'email' => $email2]);
     $r2 = cerere('POST', '/admin/parola-uitata', ['_csrf' => 'abc', 'email' => 'nimeni-' . bin2hex(random_bytes(2)) . '@example.com']);
     ok('parola-uitata: răspuns identic', corp($r1) === corp($r2) && str_contains(corp($r1), 'Dacă adresa există'));
+    ok('  pagina anunță 30 de minute', str_contains(corp($r1), 'valabil 30 de minute'));
+
+    // TTL de resetare: 30 min, nu 7 zile ca invitația. Ambele momente vin din
+    // ceasul MySQL, ca să nu comparăm fusuri diferite.
+    $expReset = strtotime((string) $pdo->query('SELECT expira_la FROM parola_tokens WHERE utilizator_id = ' . (int) $u2['id'] . ' ORDER BY id DESC LIMIT 1')->fetchColumn());
+    $acumDb   = strtotime((string) $pdo->query('SELECT NOW()')->fetchColumn());
+    ok('  tokenul de resetare expiră în ≤ 31 min', $expReset > $acumDb && ($expReset - $acumDb) <= 31 * 60);
+    ok('  emailul de resetare spune „30 de minute”', str_contains(file_get_contents($log), 'valabil 30 de minute'));
 
     $u2id  = (int) $u2['id'];
     $tokrepo = new App\Admin\PasswordTokenRepository($db);

@@ -47,7 +47,9 @@ final class UtilizatoriRepository
 
     public function creeaza(string $email, string $nume): int
     {
-        $this->pdo->prepare("INSERT INTO utilizatori (email, nume, parola_hash) VALUES (:e, :n, '')")->execute(['e' => $email, 'n' => $nume]);
+        // `nume` are 120: tăiem, ca un câmp prea lung să nu arunce la INSERT.
+        $this->pdo->prepare("INSERT INTO utilizatori (email, nume, parola_hash) VALUES (:e, :n, '')")
+            ->execute(['e' => $email, 'n' => mb_substr($nume, 0, 120)]);
         return (int) $this->pdo->lastInsertId();
     }
 

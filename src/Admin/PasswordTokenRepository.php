@@ -14,15 +14,22 @@ use Throwable;
  * Reguli: tokenul BRUT există doar în email, în DB ținem doar `sha256(raw)`,
  * e single-use, iar consumul e atomic (`UPDATE ... WHERE folosit_la IS NULL`).
  *
- * TTL de **7 zile**, nu minute: ăsta nu e un login rapid, ci o invitație de
- * cont pe care destinatarul o deschide „când ajunge la birou". Compensăm
- * durata prin faptul că un token nou îl invalidează pe cel vechi
- * (`invalideazaPentru()`), deci nu se acumulează invitații valabile.
+ * TTL-ul depinde de flux, nu de tabelă:
+ *  - **invitație de cont** (`adauga`, „Trimite link”): 7 zile. Nu e un login
+ *    rapid, ci o invitație pe care destinatarul o deschide „când ajunge la
+ *    birou". Compensăm durata prin faptul că un token nou îl invalidează pe cel
+ *    vechi (`invalideazaPentru()`), deci nu se acumulează invitații valabile.
+ *  - **parolă uitată**: 30 de minute. Acolo omul e chiar în fața
+ *    formularului, iar linkul ajunge într-o inbox pe care n-o controlăm —
+ *    fereastra trebuie să fie cât cere operațiunea, nu cât e comod.
  */
 final class PasswordTokenRepository
 {
     /** Cât trăiește o invitație de setare a parolei. */
     public const TTL_ZILE = 7;
+
+    /** Cât trăiește un link cerut din „parolă uitată”. */
+    public const TTL_RESETARE_MINUTE = 30;
 
     private ?PDO $pdo;
 
@@ -53,8 +60,11 @@ final class PasswordTokenRepository
      * plecat, apelează `pastreazaDoar()`. Altfel, un SMTP căzut ar arde
      * invitația veche fără să livreze una nouă — utilizatorul ar rămâne fără
      * nicio cale de intrare.
+     *
+     * `$ttlMinute` implicit e cel de invitație (7 zile); fluxul „parolă uitată"
+     * dă explicit `TTL_RESETARE_MINUTE`.
      */
-    public function issue(int $utilizatorId, bool $invalideazaVechi = true): ?string
+    public function issue(int $utilizatorId, bool $invalideazaVechi = true, int $ttlMinute = self::TTL_ZILE * 24 * 60): ?string
     {
         if (!$this->pdo) {
             return null;
@@ -65,9 +75,10 @@ final class PasswordTokenRepository
                 $this->invalideazaPentru($utilizatorId);
             }
 
+            // INTERVAL inline, ca LIMIT: e un `int` deja cast, nu date de la client.
             $stmt = $this->pdo->prepare(
                 'INSERT INTO parola_tokens (utilizator_id, token_hash, expira_la)
-                 VALUES (:u, :h, (NOW() + INTERVAL ' . self::TTL_ZILE . ' DAY))'
+                 VALUES (:u, :h, (NOW() + INTERVAL ' . max(1, $ttlMinute) . ' MINUTE))'
             );
             $stmt->execute(['u' => $utilizatorId, 'h' => hash('sha256', $raw)]);
             return $raw;

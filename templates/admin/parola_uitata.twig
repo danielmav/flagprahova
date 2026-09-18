@@ -6,7 +6,7 @@
         <div class="card-body">
             <h1 class="h4 mb-3">Parolă uitată</h1>
             {% if trimis %}
-                <div class="alert alert-success mb-3" role="alert">Dacă adresa există în sistem, ai primit un email cu linkul de resetare (valabil 7 zile).</div>
+                <div class="alert alert-success mb-3" role="alert">Dacă adresa există în sistem, ai primit un email cu linkul de resetare (valabil {{ valabilitate }}).</div>
                 <p class="mb-0 small"><a href="{{ base }}{{ admin_path }}/login">Înapoi la autentificare</a></p>
             {% else %}
                 <p class="text-muted small">Scrie adresa contului tău de administrare. Îți trimitem un link din care îți poți alege o parolă nouă.</p>

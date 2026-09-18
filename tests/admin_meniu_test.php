@@ -26,6 +26,17 @@ try {
     ok('titlu gol => 200 cu eroare', $r->getStatusCode() === 200 && str_contains(corp($r), 'Titlul este obligatoriu'));
     ok('  nimic creat', (int) $pdo->query('SELECT COUNT(*) FROM meniu')->fetchColumn() === $n0);
 
+    // tip=pagina + eroare => formularul se re-randează, iar conținutul intră în
+    // editor prin `|raw`: HTML-ul din POST trebuie să fie deja curățat, altfel
+    // un POST fabricat rulează JS în pagina de admin.
+    // (Nu putem cere „niciun <script> în corp”: layout-ul de admin are unul legitim,
+    // inline, cu CSRF-ul — deci verificăm că payload-ul a dispărut integral.)
+    $r = cerere('POST', '/admin/meniu/salveaza', ['_csrf' => 'gresit', 'sectiune_id' => $sid, 'parent_id' => '', 'titlu' => "Pagina $marca", 'tip' => 'pagina', 'continut_html' => '<p>x</p><script>alert(1)</script>']);
+    ok('pagina + CSRF greșit => formular re-randat', $r->getStatusCode() === 200 && str_contains(corp($r), 'Sesiunea a expirat'));
+    ok('  HTML-ul re-randat e sanitizat', !str_contains(corp($r), '<script>alert(1)</script>') && !str_contains(corp($r), 'alert(1)'));
+    ok('  dar textul permis rămâne', str_contains(corp($r), '<p>x</p>'));
+    ok('  nimic salvat', (int) $pdo->query("SELECT COUNT(*) FROM meniu WHERE titlu = " . $pdo->quote("Pagina $marca"))->fetchColumn() === 0);
+
     // link fără http => eroare
     $r = cerere('POST', '/admin/meniu/salveaza', ['_csrf' => 'abc', 'sectiune_id' => $sid, 'parent_id' => $dosar['id'], 'titlu' => 'L', 'tip' => 'link', 'url' => 'ftp://x']);
     ok('link invalid => eroare', $r->getStatusCode() === 200 && str_contains(corp($r), 'Linkul trebuie să înceapă cu'));
