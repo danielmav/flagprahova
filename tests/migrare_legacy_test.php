@@ -35,4 +35,6 @@ ok('caleDinUrl # => null', Legacy::caleDinUrl('#') === null);
 ok('caleDinUrl http://ab => null', Legacy::caleDinUrl('http://ab') === null);
 ok('caleDinUrl extern => null', Legacy::caleDinUrl('https://example.com/x.pdf') === null);
 ok('caleDinUrl gol => null', Legacy::caleDinUrl('') === null);
+
+ok('meniu inexistent => []', (new Legacy($pdo, 'wpt9_', 'Inexistent'))->meniu() === []);
 final_test();

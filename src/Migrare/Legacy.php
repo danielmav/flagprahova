@@ -8,7 +8,7 @@ use PDO;
 /** Citire read-only din baza WordPress veche. Nu scrie niciodată. */
 final class Legacy
 {
-    public function __construct(private PDO $pdo, private string $prefix = 'wpt9_') {}
+    public function __construct(private PDO $pdo, private string $prefix = 'wpt9_', private string $numeMeniu = 'Meniu FLAG') {}
 
     /** Meniul „Meniu FLAG” (term_taxonomy nav_menu), plat, ordonat după menu_order. */
     public function meniu(): array
@@ -22,12 +22,15 @@ final class Legacy
                 FROM {$p}posts i
                 JOIN {$p}term_relationships tr ON tr.object_id = i.ID
                 JOIN {$p}term_taxonomy tt ON tt.term_taxonomy_id = tr.term_taxonomy_id AND tt.taxonomy = 'nav_menu'
+                JOIN {$p}terms t ON t.term_id = tt.term_id AND t.name = :nume
                 JOIN {$p}postmeta m ON m.post_id = i.ID
                 WHERE i.post_type = 'nav_menu_item' AND i.post_status = 'publish'
                 GROUP BY i.ID, i.menu_order, i.post_title
                 ORDER BY i.menu_order, i.ID";
+        $st = $this->pdo->prepare($sql);
+        $st->execute(['nume' => $this->numeMeniu]);
         $out = [];
-        foreach ($this->pdo->query($sql)->fetchAll() as $r) {
+        foreach ($st->fetchAll() as $r) {
             $tip = (string) $r['tip'];
             $oid = (int) $r['obiect_id'];
             $titlu = trim((string) $r['titlu_item']);
