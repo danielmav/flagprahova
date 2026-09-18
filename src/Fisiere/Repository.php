@@ -46,6 +46,15 @@ final class Repository
         return $st->fetch() ?: null;
     }
 
+    public function gasesteDupaLegacy(string $legacy): ?array
+    {
+        // BINARY: coloana e utf8mb4_unicode_ci (case-insensitive), dar legacy_url trebuie
+        // comparat exact — WP poate avea nume ca `altul.pdf` și `altul.PDF` în aceeași lună.
+        $st = $this->pdo->prepare('SELECT * FROM fisiere WHERE BINARY legacy_url = :l LIMIT 1');
+        $st->execute(['l' => $legacy]);
+        return $st->fetch() ?: null;
+    }
+
     public function lista(?string $an, ?string $luna, string $cauta = '', bool $doarImagini = false): array
     {
         $w = []; $p = [];
