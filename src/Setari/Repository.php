@@ -14,7 +14,7 @@ use PDO;
  */
 final class Repository
 {
-    public const CHEI = ['contact_email_destinatar', 'landing_titlu', 'landing_text', 'footer_text'];
+    public const CHEI = ['contact_email_destinatar', 'landing_titlu', 'landing_text', 'footer_text', 'contact_adresa', 'contact_telefon', 'contact_email_public'];
 
     private PDO $pdo;
     private ?array $cache = null;

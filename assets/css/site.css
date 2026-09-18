@@ -713,6 +713,8 @@ img { max-width: 100%; }
 
 .fp-form .invalid-feedback { font-size: 13px; }
 
+.fp-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
 /* --- Pagina interioară --------------------------------------------------- */
 .fp-pagina { padding: 2.5rem 0 4rem; }
 

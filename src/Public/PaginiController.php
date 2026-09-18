@@ -82,7 +82,12 @@ final class PaginiController
         foreach ($nod['copii'] as $c) {
             if ($c['tip'] === 'galerie') { $c['imagini'] = $galerii->imagini((int) $c['id']); $vars['galerii'][] = $c; }
         }
-        $sablon = ($rand['sablon'] ?? 'standard') === 'contact' ? 'sectiune/contact.twig' : 'sectiune/pagina.twig';
-        return $this->twig->render($response, $sablon, $vars);
+        if (($rand['sablon'] ?? 'standard') === 'contact') {
+            $vars['form'] = ['erori' => [], 'valori' => []];
+            $vars['time_token'] = \App\Form\TimeToken::mint();
+            $vars['trimis'] = isset($request->getQueryParams()['trimis']);
+            return $this->twig->render($response, 'sectiune/contact.twig', $vars);
+        }
+        return $this->twig->render($response, 'sectiune/pagina.twig', $vars);
     }
 }

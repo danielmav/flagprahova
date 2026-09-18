@@ -21,6 +21,9 @@ $setari = [
     'landing_titlu'            => 'Asociația FLAG Prahova',
     'landing_text'             => 'Grup de acțiune locală pentru pescuit și acvacultură în județul Prahova.',
     'footer_text'              => 'Conținutul acestui material nu reprezintă în mod obligatoriu poziția oficială a Uniunii Europene sau a Guvernului României.',
+    'contact_adresa'           => 'Comuna Păulești, Sat Găgeni, nr. 41, județul Prahova',
+    'contact_telefon'          => '0762 609 685',
+    'contact_email_public'     => 'flagprahova@gmail.com',
 ];
 $st = $pdo->prepare('INSERT IGNORE INTO setari (cheie, valoare) VALUES (:c, :v)');
 foreach ($setari as $c => $v) {

@@ -73,4 +73,5 @@ return function (App $app, Twig $twig, array $container): void {
     // Regexul de perioadă garantează că ruta nu umbrește /sitemap.xml, /robots.txt,
     // /admin/... sau /fisiere/... .
     $app->get('/{perioada:[0-9]{4}-[0-9]{4}}/{slug:[a-z0-9-]+}', fn($rq, $rs, $a) => $pc()->pagina($rq, $rs, $a));
+    $app->post('/{perioada:[0-9]{4}-[0-9]{4}}/{slug:[a-z0-9-]+}', fn($rq, $rs, $a) => (new \App\Public\ContactController($twig, $container))->trimite($rq, $rs, $a));
 };
