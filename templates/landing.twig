@@ -2,8 +2,21 @@
 {% block title %}{{ setari.landing_titlu|default('Asociația FLAG Prahova') }}{% endblock %}
 {% block description %}{{ setari.landing_text|default('') }}{% endblock %}
 {% block jsonld %}
+{# Interpolarea directă în `<script>` ar trece prin autoescape-ul HTML, iar un
+   `&`, `"` sau `<` dintr-o setare ar ieși ca entitate și ar strica JSON-ul.
+   Construim obiectul ca hash Twig și îl serializăm o singură dată. #}
+{% set ld = {
+    '@context': 'https://schema.org',
+    '@type':    'Organization',
+    'name':     'Asociația FLAG Prahova',
+    'url':      app.url ~ '/',
+    'logo':     app.url ~ '/assets/img/logo/flag-prahova.png'
+} %}
+{% if setari.contact_telefon|default('') %}{% set ld = ld|merge({'telephone': setari.contact_telefon}) %}{% endif %}
+{% if setari.contact_email_public|default('') %}{% set ld = ld|merge({'email': setari.contact_email_public}) %}{% endif %}
 <script type="application/ld+json">
-{"@context": "https://schema.org", "@type": "Organization", "name": "Asociația FLAG Prahova", "url": "{{ app.url }}/", "logo": "{{ app.url }}/assets/img/logo/flag-prahova.png"{% if setari.contact_telefon|default('') %}, "telephone": "{{ setari.contact_telefon }}"{% endif %}{% if setari.contact_email_public|default('') %}, "email": "{{ setari.contact_email_public }}"{% endif %}}
+{# JSON_HEX_TAG: un `</script>` dintr-o setare nu poate închide elementul. #}
+{{ ld|json_encode(constant('JSON_HEX_TAG'))|raw }}
 </script>
 {% endblock %}
 {% block content %}

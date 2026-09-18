@@ -30,7 +30,12 @@ try {
     ok('  canonical + OG + twitter', str_contains($c, '<link rel="canonical" href="http://flagprahova.test/">') && str_contains($c, 'property="og:title"') && str_contains($c, 'property="og:image" content="http://flagprahova.test/assets/img/og-default.png"') && str_contains($c, 'name="twitter:card"'));
     ok('  un singur h1', substr_count($c, '<h1') === 1);
     ok('  logo-uri + text cofinanțare', str_contains($c, 'assets/img/logo/eu-flag.png') && str_contains($c, 'Cofinanțat de Uniunea Europeană') && str_contains($c, 'assets/img/logo/flag-prahova.png'));
-    ok('  JSON-LD Organization', str_contains($c, '"@type": "Organization"') || str_contains($c, '"@type":"Organization"'));
+    // JSON-LD-ul trebuie să fie JSON VALID, nu doar să conțină șirul potrivit:
+    // o valoare interpolată prin autoescape-ul HTML ar strica parsarea.
+    $ld = preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $c, $m) === 1
+        ? json_decode(trim($m[1]), true) : null;
+    ok('  JSON-LD Organization parsează', is_array($ld) && ($ld['@type'] ?? null) === 'Organization'
+        && ($ld['@context'] ?? null) === 'https://schema.org' && ($ld['url'] ?? null) === 'http://flagprahova.test/');
     ok('  CSS/JS locale, nimic extern', str_contains($c, '/assets/css/site.css') && str_contains($c, '/assets/js/site.js') && !str_contains($c, 'googleapis') && !str_contains($c, 'cdn.'));
     ok('  fără link către admin', !str_contains($c, '/admin'));
 
