@@ -131,26 +131,35 @@ final class Upload
             }
             fclose($fh);
             $stream->rewind();
-
-            $zip = new ZipArchive();
-            if ($zip->open($tmp) !== true) {
-                return null;
-            }
-            try {
-                $ok = match ($extDeclarata) {
-                    'docx', 'xlsx', 'pptx' => $zip->locateName('[Content_Types].xml') !== false,
-                    'odt' => $zip->locateName('mimetype') !== false
-                        && $zip->getFromName('mimetype') === 'application/vnd.oasis.opendocument.text',
-                    default => false,
-                };
-            } finally {
-                $zip->close();
-            }
-            return $ok ? (array_search($extDeclarata, self::MIME, true) ?: null) : null;
+            return self::mimeOffice($tmp, $extDeclarata);
         } catch (Throwable) {
             return null;
         } finally {
             @unlink($tmp);
         }
+    }
+
+    /**
+     * Verifică dacă un fișier ZIP de pe disc e de fapt un document Office (docx/xlsx/pptx) sau
+     * ODT, după structura internă a arhivei — nu doar după extensia declarată. Întoarce MIME-ul
+     * canonic dacă structura confirmă tipul, altfel null (rămâne application/zip).
+     */
+    public static function mimeOffice(string $caleFisier, string $extDeclarata): ?string
+    {
+        $zip = new ZipArchive();
+        if ($zip->open($caleFisier) !== true) {
+            return null;
+        }
+        try {
+            $ok = match ($extDeclarata) {
+                'docx', 'xlsx', 'pptx' => $zip->locateName('[Content_Types].xml') !== false,
+                'odt' => $zip->locateName('mimetype') !== false
+                    && $zip->getFromName('mimetype') === 'application/vnd.oasis.opendocument.text',
+                default => false,
+            };
+        } finally {
+            $zip->close();
+        }
+        return $ok ? (array_search($extDeclarata, self::MIME, true) ?: null) : null;
     }
 }
