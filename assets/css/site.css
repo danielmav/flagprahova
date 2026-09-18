@@ -215,7 +215,8 @@ img { max-width: 100%; }
   color: var(--fp-navy);
 }
 
-.fp-switch a:hover { color: var(--fp-blue); text-decoration: none; }
+/* Hover pe pastila bleu: fundal mai deschis, nu text albastru (ar da 4,3:1 la 14px). */
+.fp-switch a:hover { background: rgba(255, 255, 255, .6); text-decoration: none; }
 
 .fp-switch a[aria-current="page"],
 .fp-switch a.activ { background: #fff; color: var(--fp-navy); box-shadow: 0 1px 4px rgba(39, 43, 92, .12); }
@@ -272,7 +273,8 @@ img { max-width: 100%; }
   color: var(--fp-blue);
 }
 
-.fp-eyebrow--soft { background: var(--fp-blue-soft); }
+/* Pe fundal bleu, textul trece pe bleumarin: albastrul pe --fp-blue-soft dă doar 4,3:1. */
+.fp-eyebrow--soft { background: var(--fp-blue-soft); color: var(--fp-navy); }
 
 /* --- Butoane ------------------------------------------------------------ */
 .fp-btn {
@@ -377,7 +379,8 @@ img { max-width: 100%; }
   height: 44px;
   border-radius: 12px;
   background: var(--fp-blue-soft);
-  color: var(--fp-blue);
+  /* Eticheta de extensie e de 11px, deci bleumarin, nu albastru (contrast). */
+  color: var(--fp-navy);
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
