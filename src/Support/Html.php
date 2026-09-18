@@ -5,6 +5,7 @@ namespace App\Support;
 
 use DOMDocument;
 use DOMElement;
+use DOMText;
 
 final class Html
 {
@@ -14,6 +15,9 @@ final class Html
         'a' => ['href', 'target', 'rel'], 'img' => ['src', 'alt'],
         'iframe' => ['src', 'width', 'height', 'allowfullscreen'],
     ];
+
+    /** Scheme acceptate în href/src: http(s), mailto, cale absolută (nu „//”), ancoră, cale relativă. */
+    private const URL_PERMIS = '#^(https?://|mailto:|/(?!/)|[\#?]|[^/:?\#]+(?:[?\#/]|$))#i';
 
     public static function curata(string $html): string
     {
@@ -35,7 +39,10 @@ final class Html
         for ($i = $el->childNodes->length - 1; $i >= 0; $i--) {
             $c = $el->childNodes->item($i);
             if (!$c instanceof DOMElement) {
-                if ($c->nodeType === XML_COMMENT_NODE) { $el->removeChild($c); }
+                // Listă albă de noduri: doar text. Comentariile, instrucțiunile de
+                // procesare (`<?x …`) și CDATA sunt scoase — altfel ar fi emise
+                // verbatim de saveHTML() și ar putea rupe structura documentului.
+                if (!$c instanceof DOMText) { $el->removeChild($c); }
                 continue;
             }
             $tag = strtolower($c->tagName);
@@ -54,13 +61,22 @@ final class Html
                 $n = strtolower($atr->name);
                 $v = trim($atr->value);
                 $ok = in_array($n, self::PERMISE[$tag], true)
-                    && !str_starts_with($n, 'on')
                     && !preg_match('/^\s*(javascript|data|vbscript):/i', $v);
+                // href/src: listă albă de scheme. `/(?!/)` respinge URL-urile
+                // protocol-relative (`//evil.tld/x`), care altfel ar trece.
+                if ($ok && ($n === 'href' || $n === 'src') && !preg_match(self::URL_PERMIS, $v)) { $ok = false; }
                 if ($ok && $tag === 'iframe' && $n === 'src' && !preg_match('#^https://(www\.)?(youtube\.com|youtube-nocookie\.com)/embed/#', $v)) { $ok = false; }
                 if (!$ok) { $c->removeAttribute($atr->name); }
             }
             if ($tag === 'iframe' && !$c->hasAttribute('src')) { $el->removeChild($c); continue; }
-            if ($tag === 'a' && strtolower($c->getAttribute('target')) === '_blank') { $c->setAttribute('rel', 'noopener'); }
+            if ($tag === 'a' && strtolower($c->getAttribute('target')) === '_blank') {
+                // Păstrăm valorile puse de redactor (nofollow…) și adăugăm ce lipsește.
+                $rel = preg_split('/\s+/', strtolower(trim($c->getAttribute('rel'))), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                foreach (['noopener', 'noreferrer'] as $r) {
+                    if (!in_array($r, $rel, true)) { $rel[] = $r; }
+                }
+                $c->setAttribute('rel', implode(' ', $rel));
+            }
             self::parcurge($c);
         }
     }

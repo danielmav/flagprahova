@@ -8,10 +8,24 @@ ok('Html: scoate script', !str_contains(Html::curata('<p>a</p><script>alert(1)</
 ok('Html: scoate onclick', !str_contains(Html::curata('<p onclick="x()">a</p>'), 'onclick'));
 ok('Html: scoate javascript:', !str_contains(Html::curata('<a href="javascript:alert(1)">x</a>'), 'javascript'));
 ok('Html: păstrează p/strong/a', Html::curata('<p><strong>b</strong> <a href="https://x.ro">l</a></p>') === '<p><strong>b</strong> <a href="https://x.ro">l</a></p>');
-ok('Html: target=_blank primește rel=noopener', str_contains(Html::curata('<a href="https://x.ro" target="_blank">l</a>'), 'rel="noopener"'));
+ok('Html: target=_blank primește rel=noopener noreferrer', str_contains(Html::curata('<a href="https://x.ro" target="_blank">l</a>'), 'rel="noopener noreferrer"'));
 ok('Html: iframe youtube păstrat', str_contains(Html::curata('<iframe src="https://www.youtube.com/embed/abc" allowfullscreen></iframe>'), '<iframe'));
 ok('Html: iframe alt domeniu scos', !str_contains(Html::curata('<iframe src="https://evil.com/x"></iframe>'), '<iframe'));
 ok('Html: diacritice intacte', Html::curata('<p>Șirna și Păulești</p>') === '<p>Șirna și Păulești</p>');
+// Doar text și elemente: o instrucțiune de procesare nu trebuie emisă verbatim,
+// nici să scurgă `</div>`-ul wrapperului intern.
+$pi = Html::curata('<?x onerror=alert(1) ');
+ok('Html: processing instruction eliminată', !str_contains($pi, 'onerror') && !str_contains($pi, '<?') && !str_contains($pi, '</div>'));
+ok('Html: comentariu eliminat', !str_contains(Html::curata('<p>a<!-- x --></p>'), 'x --'));
+// href: listă albă de scheme, nu listă neagră.
+ok('Html: href protocol-relative scos', !str_contains(Html::curata('<a href="//evil.tld/x">l</a>'), 'evil.tld'));
+ok('Html: href absolut păstrat', str_contains(Html::curata('<a href="/fisiere/x.pdf">l</a>'), 'href="/fisiere/x.pdf"'));
+ok('Html: ancoră păstrată', str_contains(Html::curata('<a href="#sus">l</a>'), 'href="#sus"'));
+ok('Html: mailto păstrat', str_contains(Html::curata('<a href="mailto:a@b.ro">l</a>'), 'href="mailto:a@b.ro"'));
+ok('Html: https păstrat', str_contains(Html::curata('<a href="https://x.ro/a?b=1">l</a>'), 'href="https://x.ro/a?b=1"'));
+ok('Html: img cu src protocol-relative pierde src', !str_contains(Html::curata('<img src="//evil.tld/a.png" alt="a">'), 'evil.tld'));
+ok('Html: rel existent păstrat, completat', Html::curata('<a href="https://x.ro" target="_blank" rel="nofollow">l</a>')
+    === '<a href="https://x.ro" target="_blank" rel="nofollow noopener noreferrer">l</a>');
 
 $pdo = pdo();
 $uid = logheaza_test();
@@ -43,12 +57,18 @@ try {
     ok('  cale din fisiere', str_ends_with($gal[0]['cale'], 'b.png'));
 
     $r = cerere('GET', '/admin/meniu/' . $g['id']);
-    ok('formularul galeriei listează imaginile', substr_count(corp($r), 'name="galerie_fisier_id[]"') === 2);
+    // Numărăm doar rândurile reale din <ol>, nu și cel din <template>.
+    $lista = explode('<template', corp($r))[0];
+    ok('formularul galeriei listează imaginile', substr_count($lista, 'data-fisier-id="') === 2);
 
     // re-salvare cu o singură imagine înlocuiește setul
     cerere('POST', '/admin/meniu/salveaza', ['_csrf' => 'abc', 'id' => $g['id'], 'sectiune_id' => $sid, 'parent_id' => '', 'titlu' => "Galerie $marca", 'tip' => 'galerie', 'vizibil' => '1',
         'galerie_fisier_id' => [$fids['a.png']], 'galerie_legenda' => ['']]);
     ok('re-salvarea înlocuiește setul', (int) $pdo->query('SELECT COUNT(*) FROM galerie_imagini WHERE meniu_id = ' . (int) $g['id'])->fetchColumn() === 1);
+
+    // schimbarea tipului golește galeria (imaginile n-ar mai fi accesibile din formular)
+    cerere('POST', '/admin/meniu/salveaza', ['_csrf' => 'abc', 'id' => $g['id'], 'sectiune_id' => $sid, 'parent_id' => '', 'titlu' => "Galerie $marca", 'tip' => 'dosar', 'vizibil' => '1']);
+    ok('schimbarea tipului golește galeria', (int) $pdo->query('SELECT COUNT(*) FROM galerie_imagini WHERE meniu_id = ' . (int) $g['id'])->fetchColumn() === 0);
 } finally {
     foreach ($mids as $id) { $pdo->exec("DELETE FROM meniu WHERE id = $id"); }
     foreach ($fids as $id) { $pdo->exec("DELETE FROM fisiere WHERE id = $id"); }

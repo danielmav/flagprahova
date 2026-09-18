@@ -164,15 +164,22 @@ final class MeniuController
             $this->meniu->actualizeaza($id, $date);
             $this->flash('ok', 'Intrare salvată.');
         }
-        $this->dupaSalvare($id, $request); // Task 8: galerie
+        $this->dupaSalvare($id, (string) $date['tip'], $request); // Task 8: galerie
         return $this->redirect($response, '/meniu?sectiune=' . $sec['slug']);
     }
 
-    /** Scrie imaginile galeriei trimise de formular (ordinea câmpurilor = ordinea din galerie). */
-    private function dupaSalvare(int $id, Request $request): void
+    /**
+     * Scrie imaginile galeriei trimise de formular (ordinea câmpurilor = ordinea din galerie).
+     * `$tip` e tipul deja normalizat, nu cel brut din POST. Dacă intrarea nu (mai) e
+     * galerie, setăm o listă goală: altfel imaginile ar rămâne orfane după schimbarea tipului.
+     */
+    private function dupaSalvare(int $id, string $tip, Request $request): void
     {
-        $in = (array) $request->getParsedBody();
-        if (($in['tip'] ?? '') !== 'galerie') { return; }
+        if ($tip !== 'galerie') {
+            $this->galerie->seteaza($id, []);
+            return;
+        }
+        $in  = (array) $request->getParsedBody();
         $ids = (array) ($in['galerie_fisier_id'] ?? []);
         $leg = (array) ($in['galerie_legenda'] ?? []);
         $set = [];
