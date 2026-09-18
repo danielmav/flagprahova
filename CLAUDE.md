@@ -2,7 +2,7 @@
 
 Slim 4 + Twig + PDO, PHP ≥ 8.1, fără build step; Bootstrap/Quill/SortableJS vendorate în `assets/vendor/`.
 Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`. Planuri: `docs/superpowers/plans/`.
-Stadiu: Plan 1 (admin) și Plan 2 (migrare WP) mergeuite în `main` (2026-09-18). Plan 3 (sit public) gata pe branch-ul `plan-3-sit-public`; urmează Plan 4 = staging/lansare.
+Stadiu: Plan 1 (admin) și Plan 2 (migrare WP) mergeuite în `main` (2026-09-18). Plan 3 (sit public) mergeuit în `main` (2026-09-18); urmează Plan 4 = staging/lansare (deploy planificat 2026-09-19).
 Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO) sunt în `~/.claude/CLAUDE.md`.
 
 ## Server / deploy
