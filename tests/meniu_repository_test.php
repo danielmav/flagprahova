@@ -12,12 +12,18 @@ $creati = [];
 try {
     $a = $repo->creeaza(['sectiune_id' => $sid, 'parent_id' => null, 'titlu' => "Strategie $marca", 'slug' => '', 'tip' => 'dosar']);
     $b = $repo->creeaza(['sectiune_id' => $sid, 'parent_id' => $a, 'titlu' => "Ghidul solicitantului $marca", 'slug' => '', 'tip' => 'dosar']);
-    $c = $repo->creeaza(['sectiune_id' => $sid, 'parent_id' => $b, 'titlu' => "Măsura 1 – Rev. 5", 'slug' => '', 'tip' => 'link', 'url' => 'https://example.com/m1.pdf']);
-    $d = $repo->creeaza(['sectiune_id' => $sid, 'parent_id' => $b, 'titlu' => "Măsura 1 – Rev. 5", 'slug' => '', 'tip' => 'link', 'url' => 'https://example.com/m1b.pdf']);
+    // Titlul include marcajul aleator: un titlu fix ca „Măsura 1 – Rev. 5” poate
+    // coincide cu slug-ul unei intrări REALE deja migrate din WordPress, caz în
+    // care `slugUnic()` ar da testului sufixul „-2” în loc de sufixul curat,
+    // rupând aserțiunile de mai jos fără nicio legătură cu codul testat.
+    $titluBaza = "Măsura 1 – Rev. 5 $marca";
+    $slugBaza = slugify($titluBaza);
+    $c = $repo->creeaza(['sectiune_id' => $sid, 'parent_id' => $b, 'titlu' => $titluBaza, 'slug' => '', 'tip' => 'link', 'url' => 'https://example.com/m1.pdf']);
+    $d = $repo->creeaza(['sectiune_id' => $sid, 'parent_id' => $b, 'titlu' => $titluBaza, 'slug' => '', 'tip' => 'link', 'url' => 'https://example.com/m1b.pdf']);
     $creati = [$a, $b, $c, $d];
 
-    ok('slug generat din titlu', $repo->gaseste($c)['slug'] === 'masura-1-rev-5');
-    ok('slug duplicat primește sufix -2', $repo->gaseste($d)['slug'] === 'masura-1-rev-5-2');
+    ok('slug generat din titlu', $repo->gaseste($c)['slug'] === $slugBaza);
+    ok('slug duplicat primește sufix -2', $repo->gaseste($d)['slug'] === $slugBaza . '-2');
     ok('ordine crește între frați', (int) $repo->gaseste($d)['ordine'] === (int) $repo->gaseste($c)['ordine'] + 1);
 
     $arb = $repo->arbore($sid);

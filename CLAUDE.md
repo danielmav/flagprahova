@@ -30,9 +30,9 @@ Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`. Planur
 ## Migrare din WordPress
 
 - Sursa e baza WP veche `flagprahova_wp_old` (`DB_WP_*` în `.env`, read-only, doar pentru scripturile de migrare).
-- Ordine: `import_fisiere.php --zip=...` (atașamente → `fisiere/AAAA/LL/`, sare mini­aturile WP și pluginurile) →
+- Ordine: `import_fisiere.php --zip=...` (atașamente → `fisiere/AAAA/LL/`, sare miniaturile WP și pluginurile) →
   `migrate_wp.php` (funcția `migreaza()`: arborele 2014-2020, meniul fix 2021-2027, galeriile Cooperare, Acasă) →
-  `verifica_migrare.php` (funcția `verifica()`: documente fără fișier, pagini goale, galerii fără imagini, exit 1 dacă lipsesc fișiere).
+  `verifica_migrare.php` (funcția `verifica()`: documente fără fișier, pagini goale, galerii fără imagini, exit 1 dacă lipsesc fișiere, exit 2 dacă există alte probleme).
 - Idempotență pe `legacy_id` (`meniu`) / `legacy_url` (`fisiere`): re-rularea oricărui script nu duplică rânduri; `migrate_wp.php` actualizează, nu re-creează.
 - `Harta::SET_2021` decide ce intrări vechi trec în secțiunea 2021-2027; schimbarea ei mută automat intrările la următoarea migrare.
 - `reset_continut.php --da` rulează DOAR cu `APP_ENV=dev`: șterge galerii/meniu/fișiere și reface `setari` din `seed.php`. Fișierele de pe disc NU se șterg — `import_fisiere.php` le (re)înregistrează după reset fără să le rescrie (verifică potrivirea pe conținut, nu doar pe nume, ca să nu creeze dubluri „-2”).

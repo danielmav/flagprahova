@@ -67,6 +67,51 @@ try {
     $c2b = $repo->gasesteDupaCale('1999/05/copie-2.pdf');
     ok('re-rulare: legacy_url neschimbate (fără suprascriere md5)', $c1b['legacy_url'] === $c1['legacy_url'] && $c2b['legacy_url'] === $c2['legacy_url']);
 
+    // Reset + reimport: rândul din `fisiere` lipsește (ca după `reset_continut.php
+    // --da`), dar fișierele sunt deja pe disc, byte-identice cu arhiva => doar
+    // re-înregistrare, FĂRĂ rescriere și FĂRĂ fișier „-3” nou.
+    $mtimeTrecut = time() - 3600;
+    touch("$dest/1999/05/copie.pdf", $mtimeTrecut);
+    touch("$dest/1999/05/copie-2.pdf", $mtimeTrecut);
+    clearstatcache();
+    pdo()->exec("DELETE FROM fisiere WHERE id IN ({$c1['id']}, {$c2['id']})");
+    $z = new ZipArchive(); $z->open($zipCale);
+    $r5 = importa_fisiere($z, $dest, $repo, '1999/05');
+    $z->close();
+    ok('reset+reimport: 2 re-inregistrate (nu 0, nu noi scrise)', $r5['importate'] === 2);
+    ok('  fara fisier -3 nou creat', !is_file("$dest/1999/05/copie-3.pdf"));
+    clearstatcache();
+    ok('  mtime neschimbat pe ambele (fara rescriere)', filemtime("$dest/1999/05/copie.pdf") === $mtimeTrecut && filemtime("$dest/1999/05/copie-2.pdf") === $mtimeTrecut);
+    $c1r = $repo->gasesteDupaCale('1999/05/copie.pdf');
+    $c2r = $repo->gasesteDupaCale('1999/05/copie-2.pdf');
+    ok('  aceleași căi refăcute, legacy_url pe fiecare', $c1r !== null && $c2r !== null
+        && in_array($c1r['legacy_url'], ['1999/05/Copie.pdf', '1999/05/copie.pdf'], true)
+        && in_array($c2r['legacy_url'], ['1999/05/Copie.pdf', '1999/05/copie.pdf'], true));
+
+    // Conținut DIFERIT, rând absent: numele e „ocupat” pe disc de un fișier care NU
+    // mai e byte-identic (nu e propriul fișier de dinainte de reset) => tot „-2”,
+    // niciodată reuse/suprascriere silențioasă a unui fișier străin.
+    $zCiocnire = "$tmp/ciocnire.zip";
+    $zc = new ZipArchive(); $zc->open($zCiocnire, ZipArchive::CREATE);
+    $zc->addFromString('wp-content/uploads/1999/09/unic.pdf', $pdf);
+    $zc->close();
+    $destC = "$tmp/fc";
+    $zc = new ZipArchive(); $zc->open($zCiocnire);
+    $rc1 = importa_fisiere($zc, $destC, $repo);
+    $zc->close();
+    ok('ciocnire: prima rulare inregistreaza unic.pdf', $rc1['importate'] === 1 && is_file("$destC/1999/09/unic.pdf"));
+    $rândUnic = $repo->gasesteDupaCale('1999/09/unic.pdf');
+    pdo()->exec('DELETE FROM fisiere WHERE id = ' . (int) $rândUnic['id']);
+    file_put_contents("$destC/1999/09/unic.pdf", 'continut cu totul altul, nu din arhiva'); // simulează un fișier STRĂIN cu același nume
+    $zc = new ZipArchive(); $zc->open($zCiocnire);
+    $rc2 = importa_fisiere($zc, $destC, $repo);
+    $zc->close();
+    ok('ciocnire: conținut diferit => tot -2 (nu suprascrie fișierul străin)', $rc2['importate'] === 1
+        && is_file("$destC/1999/09/unic-2.pdf") && file_get_contents("$destC/1999/09/unic-2.pdf") === $pdf
+        && file_get_contents("$destC/1999/09/unic.pdf") === 'continut cu totul altul, nu din arhiva');
+    $rândUnic2 = $repo->gasesteDupaCale('1999/09/unic-2.pdf');
+    ok('  rândul nou se leagă de fișierul -2, nu de cel străin', $rândUnic2 !== null && $rândUnic2['legacy_url'] === '1999/09/unic.pdf');
+
     // filtru --doar
     $repo3 = $repo; $dest3 = "$tmp/f3";
     $z = new ZipArchive(); $z->open($zipCale);

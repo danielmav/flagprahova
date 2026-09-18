@@ -47,7 +47,16 @@ try {
     $n21 = (int) $pdo->query("SELECT COUNT(*) FROM meniu WHERE sectiune_id=$sid21 AND legacy_id IS NOT NULL")->fetchColumn();
     ok('2014-2020: peste 190 de intrări migrate', $n20 >= 190);
     ok('2021-2027: 12 sintetice + 9 mutate = 21', $n21 === 21);
-    ok('raport: creat = total (inclusiv galeriile)', $r['creat'] === $n20 + $n21);
+    // `creat` nu e neapărat egal cu totalul: dacă `meniu` are deja conținut migrat
+    // (rulare pe bază reală, deja migrată), migreaza() actualizează în loc să creeze.
+    // Suma creat+actualizat trebuie totuși să acopere tot, iar `creat` trebuie să
+    // corespundă EXACT id-urilor noi apărute față de instantaneul de dinaintea acestui apel.
+    $idsNoi = [];
+    foreach (array_map('intval', $pdo->query('SELECT id FROM meniu WHERE legacy_id IS NOT NULL')->fetchAll(PDO::FETCH_COLUMN)) as $id) {
+        if (!isset($meniuVechi[$id])) { $idsNoi[] = $id; }
+    }
+    ok('raport: creat + actualizat = total (inclusiv galeriile)', $r['creat'] + $r['actualizat'] === $n20 + $n21);
+    ok('raport: creat = intrările nou apărute față de instantaneu', $r['creat'] === count($idsNoi));
     $m = $ctx['meniu'];
     $org = $m->gasesteDupaLegacy(579);
     ok('579 Organigrama => document cu fisier_id', $org && $org['tip'] === 'document' && (int) $org['fisier_id'] > 0);
@@ -95,16 +104,31 @@ try {
     $nou4 = $m->gasesteDupaLegacy(3622);
     ok('intrare mutată înapoi => revine în 2021-2027, fără excepție', (int) $nou4['sectiune_id'] === $sid21 && (int) $nou4['parent_id'] === (int) $m->gasesteDupaLegacy(9001)['id'] && $r4['mutat'] >= 1);
 
-    // Atașament de galerie fără fișier => `imagini_lipsa`.
-    $primaImagine = $ctx['galerie']->imagini((int) $gal[0]['id'])[0];
+    // Atașament de galerie fără fișier => `imagini_lipsa`. Instantaneul galeriei
+    // se ia ÎNAINTE de corupere: `migreaza()` reface setul de imagini al galeriei
+    // (DELETE + re-INSERT) pe baza legacy_url-ului corupt, deci restaurarea doar a
+    // `fisiere.legacy_url` NU aduce înapoi rândul din `galerie_imagini` — pe o
+    // galerie REALĂ asta ar lăsa o imagine permanent lipsă după test.
+    $gid = (int) $gal[0]['id'];
+    $galSnapshot = $ctx['galerie']->imagini($gid);
+    $primaImagine = $galSnapshot[0];
     $fid = (int) $primaImagine['fisier_id'];
     $legacyUrlVechi[$fid] = (string) $ctx['fisiere']->gaseste($fid)['legacy_url'];
     $pdo->prepare('UPDATE fisiere SET legacy_url = :l WHERE id = :id')->execute(['l' => $legacyUrlVechi[$fid] . '.lipsa-test', 'id' => $fid]);
     $r5 = migreaza($ctx, false);
-    ok('atașament fără fișier => imagini_lipsa = 1', $r5['imagini_lipsa'] === 1 && count($ctx['galerie']->imagini((int) $gal[0]['id'])) === 39);
+    ok('atașament fără fișier => imagini_lipsa = 1', $r5['imagini_lipsa'] === 1 && count($ctx['galerie']->imagini($gid)) === 39);
 } finally {
     foreach ($legacyUrlVechi as $id => $l) {
         $pdo->prepare('UPDATE fisiere SET legacy_url = :l WHERE id = :id')->execute(['l' => $l, 'id' => $id]);
+    }
+    // Dacă galeria testată e o intrare REALĂ (era deja în instantaneul de dinaintea
+    // testului) și numărul de imagini nu mai corespunde, refacem exact setul original
+    // ÎNAINTE de a șterge intrările noi de mai jos (galeria însăși poate fi reală).
+    if (isset($gid, $galSnapshot) && isset($meniuVechi[$gid]) && count($ctx['galerie']->imagini($gid)) !== count($galSnapshot)) {
+        $ctx['galerie']->seteaza($gid, array_map(
+            static fn(array $r): array => ['fisier_id' => (int) $r['fisier_id'], 'legenda' => (string) $r['legenda']],
+            $galSnapshot
+        ));
     }
     // Doar id-urile apărute după instantaneu, de la cel mai nou spre cel mai vechi
     // (copiii sunt creați după părinți, deci nu rămân orfani).

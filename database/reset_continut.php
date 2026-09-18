@@ -22,9 +22,18 @@ use App\Setari\Repository as Setari;
 function reseteaza(PDO $pdo, string $root): array
 {
     $rap = [];
-    $rap['galerie_imagini'] = $pdo->exec('DELETE FROM galerie_imagini');
-    $rap['meniu']           = $pdo->exec('DELETE FROM meniu');
-    $rap['fisiere']         = $pdo->exec('DELETE FROM fisiere');
+    // Numărătorile se iau ÎNAINTE de fiecare DELETE, nu din valoarea întoarsă de
+    // `PDO::exec()`: `meniu.parent_id` are FK auto-referențiat cu `ON DELETE CASCADE`
+    // (`fk_meniu_parent`) — rândurile șterse prin cascadă, când scanarea DELETE-ului
+    // ajunge la ele, sunt deja dispărute, deci NU intră în numărul de rânduri afectate
+    // raportat de `exec()`. Fără fix-ul ăsta, „meniu sterse” arăta mult sub realitate
+    // (ex. 17 în loc de 253), deși ștergerea propriu-zisă era completă și corectă.
+    $rap['galerie_imagini'] = (int) $pdo->query('SELECT COUNT(*) FROM galerie_imagini')->fetchColumn();
+    $pdo->exec('DELETE FROM galerie_imagini');
+    $rap['meniu'] = (int) $pdo->query('SELECT COUNT(*) FROM meniu')->fetchColumn();
+    $pdo->exec('DELETE FROM meniu');
+    $rap['fisiere'] = (int) $pdo->query('SELECT COUNT(*) FROM fisiere')->fetchColumn();
+    $pdo->exec('DELETE FROM fisiere');
     $rap['sectiuni_curatate'] = $pdo->exec('UPDATE sectiuni SET acasa_html = NULL');
 
     $placeholders = implode(',', array_fill(0, count(Setari::CHEI), '?'));
@@ -34,6 +43,14 @@ function reseteaza(PDO $pdo, string $root): array
 
     // Sursa unică de adevăr pentru valorile implicite e `seed.php`: îl rulăm ca
     // proces separat (nu `require`, ca să nu redeclarăm clasele din vendor/autoload).
+    // `exec()` poate fi dezactivată din `disable_functions` (frecvent pe hosting
+    // partajat) — fără verificare, eroarea ar fi un fatal opac „Call to undefined
+    // function exec()”, exact în momentul în care setările tocmai au fost șterse.
+    if (!function_exists('exec')) {
+        $rap['seed_iesire'] = "exec() e dezactivata (disable_functions) — ruleaza manual: php database/seed.php";
+        $rap['seed_cod'] = 1;
+        return $rap;
+    }
     $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($root . '/database/seed.php') . ' 2>&1';
     exec($cmd, $out, $cod);
     $rap['seed_iesire'] = implode("\n", $out);
