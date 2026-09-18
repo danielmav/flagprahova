@@ -18,7 +18,7 @@ Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`. Planur
 - Uploads: `/fisiere/AAAA/LL/`, MIME din conținut (`Fisiere\Upload`), PHP blocat prin `fisiere/.htaccess`. Ștergerea e refuzată dacă fișierul e referit (`Meniu\Repository::fisierFolosit`).
 - HTML din editor trece prin `Support\Html::curata()` la salvare, nu la afișare.
 - Mail: `SMTP_HOST` gol → `storage/logs/mail.log` (dev). Pe prod trebuie completat.
-- `Meniu\Repository::arbore()` întoarce noduri cu `copii` (direcți) și `descendenti` (tot subarborele) — nu confunda cele două chei.
+- `Meniu\Repository::arbore()` întoarce noduri cu `copii` (subarborele complet, direcți) și `descendenti` (întreg — numărul total de descendenți, calculat recursiv) — nu confunda cele două chei.
 - `Support\Html::curata()` are listă albă de scheme URL (ex. `http`, `https`, `mailto`) și respinge explicit `//` (protocol-relative); păstrează doar text și elemente permise, restul e eliminat.
 - Twig 3.28 nu are `{% for … if %}` (sintaxă veche Twig 1); pentru filtrare în buclă folosește `|filter(...)` pe array înainte de `{% for %}`.
 - În teste, helper-ul `cerere()` acceptă și o listă de fișiere per câmp (upload multiplu), nu doar un fișier singular.
