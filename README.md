@@ -61,6 +61,21 @@ Ce NU face deploy-ul și trebuie făcut manual — checklist la prima instalare:
 - [ ] **Verificare funcțională** — login în admin, o încărcare de fișier, un mesaj din formularul de
       contact ajuns pe email, un link „parolă uitată” primit și folosit.
 
+## Migrarea conținutului vechi
+
+Migrarea din baza WordPress veche (`DB_WP_NAME` în `.env`) se rulează o singură dată, în această ordine
+(vezi și secțiunea „Migrare din WordPress” din `CLAUDE.md`):
+
+```bash
+php database/import_fisiere.php --zip=cale/catre/arhiva-uploads.zip
+php database/migrate_wp.php
+php database/verifica_migrare.php
+php database/migrate_wp.php   # a doua rulare: idempotentă, creat = 0
+```
+
+Pe dev, `php database/reset_continut.php --da` șterge tot conținutul migrat (galerii, meniu, fișiere)
+și reface `setari` din `seed.php`, ca să poți relua migrarea de la zero.
+
 ## Documentație
 
 Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`

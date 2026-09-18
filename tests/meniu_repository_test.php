@@ -87,7 +87,9 @@ try {
 
     ok('sterge(A) șterge 4', $repo->sterge($a) === 4);
     ok('după ștergere B lipsește', $repo->gaseste($b) === null);
-    $creati = [];
+    // Doar A/B/C/D au fost șterse de sterge($a) (subarborele lui A); eViaFisierId
+    // și fViaContinut sunt rădăcini separate și rămân în $creati pentru finally.
+    $creati = array_values(array_diff($creati, [$a, $b, $c, $d]));
 } finally {
     foreach ($creati as $id) { $pdo->exec("DELETE FROM meniu WHERE id = $id"); }
 }

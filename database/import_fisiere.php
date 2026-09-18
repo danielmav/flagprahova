@@ -51,14 +51,37 @@ function importa_fisiere(ZipArchive $zip, string $dest, Fisiere $repo, ?string $
         $sigur = Upload::numeSigur($fisier);
         $baza = pathinfo($sigur, PATHINFO_FILENAME);
         $cand = $sigur;
-        // Fără reuse pe md5: reuse-ul real vine DOAR din gasesteDupaLegacy() de mai sus.
-        // Două atașamente WP diferite cu conținut identic primesc fișiere separate pe disc,
-        // altfel a doua rulare ar suprascrie legacy_url-ul rândului existent (vezi revizie).
-        for ($n = 2; is_file("$dir/$cand"); $n++) {
-            $cand = "$baza-$n.$e";
+        // Fără reuse pe md5 în cazul GENERAL: reuse-ul vine DOAR din gasesteDupaLegacy()
+        // de mai sus. Două atașamente WP diferite cu conținut identic primesc fișiere
+        // separate pe disc, altfel a doua rulare ar suprascrie legacy_url-ul rândului
+        // existent (vezi revizie).
+        //
+        // EXCEPȚIE: după `reset_continut.php` (DELETE FROM fisiere, fișierele rămân pe
+        // disc), tabela e complet goală, deci exact fișierele deja importate anterior
+        // par acum „nerevendicate”. Fără verificarea de mai jos, bucla de coliziune le-ar
+        // considera pe toate „ocupate” și ar scrie dubluri „-2”, „-3”... pentru fiecare
+        // fișier real. Detectăm acest caz per candidat: dacă fișierul de pe disc nu e
+        // revendicat încă de niciun rând ÎN ACEASTĂ RULARE (gasesteDupaCale) și conținutul
+        // lui e byte-identic cu cel din arhivă, e propriul fișier de dinainte de reset —
+        // îl (re)înregistrăm fără să-l rescriem. Ordinea de parcurgere a arhivei e
+        // deterministă (aceeași arhivă), deci coliziunile se reconstituie identic.
+        $reuseFaraScriere = false;
+        for ($n = 1; is_file("$dir/$cand"); $n++) {
+            if ($repo->gasesteDupaCale("$luna/$cand") === null
+                && filesize("$dir/$cand") === strlen($continut)
+                && hash_equals((string) md5_file("$dir/$cand"), md5($continut))
+            ) {
+                $reuseFaraScriere = true;
+                break;
+            }
+            $cand = "$baza-" . ($n + 1) . ".$e";
         }
-        if (file_put_contents("$dir/$cand", $continut) === false) { $r['erori'][] = "$legacy: nu pot scrie"; continue; }
-        $mime = $finfo->buffer(substr($continut, 0, 8192)) ?: 'application/octet-stream';
+        if ($reuseFaraScriere) {
+            $mime = $finfo->file("$dir/$cand") ?: 'application/octet-stream';
+        } else {
+            if (file_put_contents("$dir/$cand", $continut) === false) { $r['erori'][] = "$legacy: nu pot scrie"; continue; }
+            $mime = $finfo->buffer(substr($continut, 0, 8192)) ?: 'application/octet-stream';
+        }
         if ($mime === 'application/zip' && in_array($e, ['docx', 'xlsx', 'pptx', 'odt'], true)) {
             $mimeOffice = Upload::mimeOffice("$dir/$cand", $e);
             if ($mimeOffice !== null) { $mime = $mimeOffice; }
