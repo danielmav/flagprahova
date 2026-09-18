@@ -1,0 +1,709 @@
+/* ==========================================================================
+   FLAG Prahova — stilul sitului public.
+   Strat subțire peste Bootstrap 5.3: tokenuri, tipografie, componente proprii (.fp-*).
+   Ordine: tokenuri, bază, cap de pagină, meniu, hero, componente, conținut, footer, mobil.
+   ========================================================================== */
+
+/* --- Tokenuri ------------------------------------------------------------ */
+:root {
+  --fp-navy: #272B5C;
+  --fp-navy-deep: #1B1F4A;
+  --fp-blue: #1F6FC5;
+  --fp-blue-soft: #E6EEF8;
+  --fp-sky: #E9F0FA;
+  --fp-accent: #EC8C16;
+  --fp-text: #2B2F4A;
+  --fp-muted: #6F7390;
+  --fp-radius: 18px;
+  --fp-font-serif: 'DM Serif Display', Georgia, serif;
+  --fp-font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --bs-primary: var(--fp-blue);
+  --bs-link-color: var(--fp-blue);
+  --bs-link-hover-color: var(--fp-navy);
+  --bs-body-color: var(--fp-text);
+  --bs-body-font-family: var(--fp-font-sans);
+
+  /* Linii și umbre folosite în mai multe componente */
+  --fp-border: #E8EBF3;
+  --fp-shadow-card: 0 10px 30px rgba(39, 43, 92, .08);
+  --fp-shadow-header: 0 2px 12px rgba(39, 43, 92, .08);
+}
+
+/* --- Bază --------------------------------------------------------------- */
+body {
+  font-family: var(--fp-font-sans);
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--fp-text);
+  background: #fff;
+}
+
+h1, h2, h3 {
+  font-family: var(--fp-font-serif);
+  font-weight: 400;
+  color: var(--fp-navy);
+  line-height: 1.2;
+}
+
+h1 { font-size: clamp(2.4rem, 1.6rem + 2.4vw, 3rem); }
+h2 { font-size: clamp(1.7rem, 1.3rem + 1.2vw, 2.15rem); }
+h3 { font-size: 1.35rem; }
+
+h4, h5, h6 { font-family: var(--fp-font-sans); font-weight: 700; color: var(--fp-navy); }
+
+a { text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+:focus-visible { outline: 3px solid var(--fp-blue); outline-offset: 2px; }
+
+img { max-width: 100%; }
+
+.fp-lead { font-size: 1.15rem; color: var(--fp-muted); }
+
+/* Legătura „sari la conținut" — apare doar la navigarea cu tastatura. */
+.fp-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 1080;
+  background: #fff;
+  color: var(--fp-navy);
+  padding: .6rem 1rem;
+  border-radius: 0 0 12px 0;
+}
+
+.fp-skip:focus { left: 0; }
+
+/* --- Banda de finanțare ------------------------------------------------- */
+.fp-topstrip { background: #fff; border-bottom: 1px solid var(--fp-border); padding: .4rem 0; }
+
+.fp-logos {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.fp-logos img { height: 40px; width: auto; }
+
+.fp-logos span {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--fp-navy);
+  max-width: 16ch;
+}
+
+/* --- Cap de pagină ------------------------------------------------------ */
+.fp-header {
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  box-shadow: var(--fp-shadow-header);
+}
+
+.fp-header__bara {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: .75rem 0;
+}
+
+.fp-header__sigla img { height: 52px; width: auto; }
+
+/* --- Meniu -------------------------------------------------------------- */
+.fp-nav {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fp-nav li { position: relative; }
+
+.fp-nav__link {
+  display: block;
+  padding: .55rem .7rem;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--fp-navy);
+  border-bottom: 3px solid transparent;
+}
+
+.fp-nav__link:hover,
+.fp-nav__link:focus-visible,
+.fp-nav__link[aria-current="page"],
+.fp-nav__link.activ { color: var(--fp-blue); border-bottom-color: var(--fp-accent); text-decoration: none; }
+
+.fp-nav .dropdown-menu {
+  border: 0;
+  border-radius: 14px;
+  box-shadow: var(--fp-shadow-card);
+  min-width: 260px;
+  padding: .5rem;
+  margin-top: 0;
+}
+
+.fp-nav .dropdown-item {
+  font-size: 15px;
+  padding: .45rem .75rem;
+  border-radius: 10px;
+  white-space: normal;
+  color: var(--fp-text);
+}
+
+.fp-nav .dropdown-item:hover,
+.fp-nav .dropdown-item:focus { background: var(--fp-blue-soft); color: var(--fp-navy); }
+
+.fp-nav .dropdown-item.activ { color: var(--fp-blue); font-weight: 500; }
+
+/* Submeniuri (nivelurile 2–3): ies lateral din rândul părinte. */
+.fp-submenu {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  min-width: 240px;
+  margin: 0;
+  padding: .5rem;
+  list-style: none;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: var(--fp-shadow-card);
+}
+
+/* Când nu încap în dreapta, site.js le întoarce spre stânga. */
+.fp-submenu--stanga { left: auto; right: 100%; }
+
+.fp-has-sub > a { padding-right: 1.6rem; }
+
+.fp-has-sub > a::after {
+  content: "›";
+  position: absolute;
+  right: .6rem;
+  color: var(--fp-muted);
+}
+
+/* Deschidere pe hover/focus la desktop; .fp-open o pune site.js la touch. */
+@media (min-width: 992px) {
+  .fp-nav .dropdown:hover > .dropdown-menu,
+  .fp-nav .dropdown:focus-within > .dropdown-menu,
+  .fp-nav .dropdown.fp-open > .dropdown-menu { display: block; }
+
+  .fp-nav .fp-has-sub:hover > .fp-submenu,
+  .fp-nav .fp-has-sub:focus-within > .fp-submenu,
+  .fp-nav .fp-has-sub.fp-open > .fp-submenu { display: block; }
+}
+
+/* Comutatorul de perioadă */
+.fp-switch {
+  display: inline-flex;
+  gap: .25rem;
+  padding: 4px;
+  background: var(--fp-blue-soft);
+  border-radius: 999px;
+}
+
+.fp-switch a {
+  padding: .3rem .9rem;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fp-navy);
+}
+
+.fp-switch a:hover { color: var(--fp-blue); text-decoration: none; }
+
+.fp-switch a[aria-current="page"],
+.fp-switch a.activ { background: #fff; color: var(--fp-navy); box-shadow: 0 1px 4px rgba(39, 43, 92, .12); }
+
+/* Meniul mobil (offcanvas Bootstrap): totul devine listă verticală. */
+.fp-offcanvas .fp-nav { flex-direction: column; align-items: stretch; gap: 0; }
+
+.fp-offcanvas .fp-nav__link { padding: .6rem 0; border-bottom: 1px solid var(--fp-border); }
+
+.fp-offcanvas .fp-nav__link:hover,
+.fp-offcanvas .fp-nav__link.activ { border-bottom-color: var(--fp-border); }
+
+.fp-offcanvas .fp-submenu,
+.fp-offcanvas .dropdown-menu {
+  display: block;
+  position: static;
+  min-width: 0;
+  padding-left: 1rem;
+  box-shadow: none;
+}
+
+/* --- Hero --------------------------------------------------------------- */
+.fp-hero { background: linear-gradient(180deg, var(--fp-sky), #fff); padding: 3.5rem 0; }
+
+.fp-hero h1 { margin-bottom: 1rem; }
+
+.fp-hero__text p { max-width: 54ch; font-size: 1.1rem; color: var(--fp-muted); }
+
+.fp-hero__actiuni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-top: 1.75rem;
+}
+
+.fp-hero__ilustratie {
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
+}
+
+/* --- Eyebrow ------------------------------------------------------------ */
+.fp-eyebrow {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--fp-blue);
+}
+
+.fp-eyebrow--soft { background: var(--fp-blue-soft); }
+
+/* --- Butoane ------------------------------------------------------------ */
+.fp-btn {
+  display: inline-block;
+  padding: .7rem 1.5rem;
+  border: 2px solid var(--fp-navy);
+  border-radius: 999px;
+  background: var(--fp-navy);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.fp-btn:hover,
+.fp-btn:focus-visible {
+  background: var(--fp-blue);
+  border-color: var(--fp-blue);
+  color: #fff;
+  text-decoration: none;
+}
+
+.fp-btn--outline { background: transparent; color: var(--fp-navy); }
+
+.fp-btn--outline:hover,
+.fp-btn--outline:focus-visible { background: var(--fp-navy); border-color: var(--fp-navy); color: #fff; }
+
+.fp-btn--accent { background: var(--fp-accent); border-color: var(--fp-accent); }
+
+.fp-btn--accent:hover,
+.fp-btn--accent:focus-visible { background: var(--fp-navy); border-color: var(--fp-navy); }
+
+/* --- Secțiuni ----------------------------------------------------------- */
+.fp-section { padding: 4.5rem 0; }
+
+.fp-section--soft { background: var(--fp-blue-soft); }
+
+.fp-section__titlu { margin-bottom: 2rem; }
+
+/* --- Carduri ------------------------------------------------------------ */
+.fp-card {
+  display: block;
+  height: 100%;
+  padding: 1.75rem;
+  border-radius: var(--fp-radius);
+  background: #fff;
+  box-shadow: var(--fp-shadow-card);
+  color: var(--fp-text);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.fp-card:hover { transform: translateY(-3px); box-shadow: 0 16px 36px rgba(39, 43, 92, .12); text-decoration: none; }
+
+.fp-card h3 { font-size: 1.2rem; margin-bottom: .5rem; }
+
+.fp-card p { margin-bottom: 0; font-size: 15px; color: var(--fp-muted); }
+
+.fp-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 1.1rem;
+  border-radius: 50%;
+  background: var(--fp-blue-soft);
+  color: var(--fp-blue);
+}
+
+.fp-card__icon svg { width: 26px; height: 26px; fill: currentColor; }
+
+.fp-card__imagine {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+/* --- Documente ---------------------------------------------------------- */
+.fp-doc {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .9rem 0;
+  border-bottom: 1px solid var(--fp-border);
+  color: var(--fp-text);
+}
+
+.fp-doc:hover { text-decoration: none; }
+.fp-doc:hover .fp-doc__titlu { color: var(--fp-blue); }
+
+.fp-doc__icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--fp-blue-soft);
+  color: var(--fp-blue);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.fp-doc__icon[data-ext="pdf"] { background: #F6E4E1; color: #B3261E; }
+
+.fp-doc__icon[data-ext="doc"],
+.fp-doc__icon[data-ext="docx"] { background: #E1EAF7; color: #1A56A8; }
+
+.fp-doc__icon[data-ext="xls"],
+.fp-doc__icon[data-ext="xlsx"] { background: #E0F0E6; color: #1E7A47; }
+
+.fp-doc__titlu { font-size: 16px; font-weight: 500; color: var(--fp-navy); }
+
+.fp-doc__meta { display: block; font-size: 13px; color: var(--fp-muted); }
+
+/* --- Galerii ------------------------------------------------------------ */
+.fp-galerie {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fp-galerie__item { display: block; overflow: hidden; border-radius: 12px; }
+
+.fp-galerie__item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  transition: transform .25s ease;
+}
+
+.fp-galerie__item:hover img { transform: scale(1.04); }
+
+/* Lightbox propriu (logica în site.js) */
+.fp-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(27, 31, 74, .94);
+}
+
+.fp-lightbox[hidden] { display: none; }
+
+.fp-lightbox img { max-width: 100%; max-height: 90vh; border-radius: 12px; }
+
+.fp-lightbox__legenda { font-size: 14px; color: #fff; text-align: center; }
+
+.fp-lightbox button {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--fp-navy);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.fp-lightbox button:hover { background: var(--fp-blue-soft); }
+.fp-lightbox [data-inchide] { top: 1rem; right: 1rem; }
+.fp-lightbox [data-prev] { left: 1rem; top: 50%; transform: translateY(-50%); }
+.fp-lightbox [data-next] { right: 1rem; top: 50%; transform: translateY(-50%); }
+
+/* --- Coloana laterală --------------------------------------------------- */
+.fp-sidebar__titlu {
+  margin-bottom: .75rem;
+  font-family: var(--fp-font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--fp-muted);
+}
+
+.fp-sidebar__nav,
+.fp-sidebar__nav ul { margin: 0; padding: 0; list-style: none; }
+
+.fp-sidebar__nav a {
+  display: block;
+  padding: .4rem 0;
+  border-bottom: 1px solid var(--fp-border);
+  font-size: 15px;
+  color: var(--fp-text);
+}
+
+.fp-sidebar__nav a:hover { color: var(--fp-blue); text-decoration: none; }
+
+.fp-sidebar__nav a[aria-current="page"],
+.fp-sidebar__nav a.activ { color: var(--fp-blue); font-weight: 700; }
+
+.fp-sidebar__nav ul { margin-left: .2rem; padding-left: .9rem; border-left: 2px solid var(--fp-blue-soft); }
+
+.fp-sidebar__nav ul a { font-size: 14px; }
+
+.fp-contact-rapid {
+  margin-top: 1.75rem;
+  padding: 1.25rem;
+  border-radius: var(--fp-radius);
+  background: var(--fp-blue-soft);
+  font-size: 15px;
+}
+
+.fp-contact-rapid h3 { font-size: 1.1rem; margin-bottom: .6rem; }
+
+.fp-contact-rapid p { margin-bottom: .35rem; }
+.fp-contact-rapid a { color: var(--fp-navy); }
+
+/* --- Banda de contact (CTA) -------------------------------------------- */
+.fp-cta { padding: 4rem 0 0; background: linear-gradient(180deg, var(--fp-sky), #fff); text-align: center; }
+
+.fp-cta p { max-width: 56ch; margin-inline: auto; color: var(--fp-muted); }
+
+.fp-cta__actiuni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.fp-cta__ilustratie {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin: 2rem auto 0;
+}
+
+/* --- Footer ------------------------------------------------------------- */
+.fp-footer {
+  padding: 3.5rem 0 0;
+  background: var(--fp-navy-deep);
+  color: #A8AABE;
+  font-size: 15px;
+}
+
+.fp-footer h4 { margin-bottom: 1rem; font-size: 16px; color: #fff; }
+
+.fp-footer a { color: #fff; }
+
+.fp-footer a:hover { color: var(--fp-accent); text-decoration: none; }
+
+.fp-footer ul { margin: 0; padding: 0; list-style: none; }
+
+.fp-footer li { margin-bottom: .4rem; }
+
+.fp-footer__logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+.fp-footer__logos img {
+  height: 44px;
+  width: auto;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.fp-footer__disclaimer {
+  max-width: 80ch;
+  margin-top: 1.5rem;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.fp-footer__bottom {
+  margin-top: 2rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+  font-size: 13px;
+}
+
+/* --- Conținutul din editor ---------------------------------------------- */
+.fp-prose { max-width: 900px; }
+
+.fp-prose h2 { margin: 2rem 0 .75rem; font-size: 1.6rem; }
+
+.fp-prose h3 { margin: 1.5rem 0 .5rem; font-size: 1.25rem; }
+
+.fp-prose p,
+.fp-prose ul,
+.fp-prose ol { margin-bottom: 1.1rem; }
+
+.fp-prose img { max-width: 100%; height: auto; border-radius: 12px; }
+
+.fp-prose iframe {
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border: 0;
+  border-radius: 12px;
+}
+
+.fp-prose blockquote {
+  margin: 1.5rem 0;
+  padding-left: 1.1rem;
+  border-left: 4px solid var(--fp-accent);
+  color: var(--fp-muted);
+}
+
+.fp-prose a { text-decoration: underline; }
+
+/* --- Firul Ariadnei ----------------------------------------------------- */
+.fp-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--fp-muted);
+}
+
+.fp-breadcrumb a { color: var(--fp-muted); }
+.fp-breadcrumb a:hover { color: var(--fp-blue); }
+
+.fp-breadcrumb li + li::before { content: "›"; margin-right: .4rem; color: var(--fp-muted); }
+
+/* --- Formulare ---------------------------------------------------------- */
+.fp-form .form-label { font-size: 14px; font-weight: 500; color: var(--fp-navy); }
+
+.fp-form .form-control,
+.fp-form .form-select {
+  padding: .65rem .9rem;
+  border-radius: 12px;
+  border-color: var(--fp-border);
+  font-size: 16px;
+}
+
+.fp-form .form-control:focus,
+.fp-form .form-select:focus { border-color: var(--fp-blue); box-shadow: 0 0 0 .2rem rgba(31, 111, 197, .15); }
+
+.fp-form .invalid-feedback { font-size: 13px; }
+
+/* --- Acordeonul galeriilor ---------------------------------------------- */
+.fp-acordeon { margin-top: 2.5rem; border-top: 1px solid var(--fp-border); }
+
+.fp-acordeon details { border-bottom: 1px solid var(--fp-border); }
+
+.fp-acordeon summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  list-style: none;
+  font-family: var(--fp-font-sans);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--fp-navy);
+  cursor: pointer;
+}
+
+.fp-acordeon summary::-webkit-details-marker { display: none; }
+
+.fp-acordeon summary::after {
+  content: "›";
+  font-size: 22px;
+  color: var(--fp-blue);
+  transform: rotate(90deg);
+  transition: transform .15s ease;
+}
+
+.fp-acordeon details[open] summary::after { transform: rotate(-90deg); }
+
+.fp-acordeon__corp { padding-bottom: 1.5rem; }
+
+/* --- Desktop ------------------------------------------------------------ */
+@media (min-width: 992px) {
+  .fp-hero { padding: 5rem 0; }
+
+  .fp-sidebar { position: sticky; top: 96px; }
+}
+
+/* --- Mobil și tabletă --------------------------------------------------- */
+@media (max-width: 991.98px) {
+  /* Meniul de desktop e înlocuit de offcanvas. */
+  .fp-header__meniu { display: none; }
+
+  .fp-hero { padding: 2.5rem 0; text-align: center; }
+
+  .fp-hero__text p { margin-inline: auto; }
+  .fp-hero__actiuni { justify-content: center; }
+
+  .fp-hero__ilustratie { width: 60%; margin-top: 2rem; }
+
+  .fp-section { padding: 3rem 0; }
+  .fp-cta { padding-top: 3rem; }
+  .fp-footer { padding-top: 2.5rem; }
+}
+
+/* Sub 576px rămân în bandă doar steagul UE și textul de cofinanțare. */
+@media (max-width: 575.98px) {
+  .fp-logos img:not(:first-of-type) { display: none; }
+  .fp-logos span { max-width: none; }
+  .fp-header__sigla img { height: 42px; }
+  .fp-card { padding: 1.25rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fp-card,
+  .fp-btn,
+  .fp-galerie__item img,
+  .fp-acordeon summary::after { transition: none; }
+
+  .fp-card:hover { transform: none; }
+  .fp-galerie__item:hover img { transform: none; }
+}
