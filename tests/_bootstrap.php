@@ -1,0 +1,73 @@
+<?php
+declare(strict_types=1);
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+use Slim\Psr7\Factory\ServerRequestFactory;
+use Slim\Psr7\Factory\StreamFactory;
+use Slim\Psr7\Factory\UploadedFileFactory;
+
+$GLOBALS['_fails'] = 0;
+$_SESSION = $_SESSION ?? [];
+
+function ok(string $label, bool $cond): void
+{
+    echo ($cond ? 'PASS  ' : 'FAIL  ') . $label . "\n";
+    if (!$cond) { $GLOBALS['_fails']++; }
+}
+
+function app(): \Slim\App
+{
+    static $app = null;
+    return $app ??= \App\Bootstrap::create();
+}
+
+function pdo(): \PDO
+{
+    static $p = null;
+    return $p ??= (new \App\Database(settings()['db']))->pdo();
+}
+
+function settings(): array
+{
+    static $s = null;
+    if ($s === null) {
+        $root = dirname(__DIR__);
+        if (is_file($root . '/.env')) { \Dotenv\Dotenv::createImmutable($root)->safeLoad(); }
+        $s = require $root . '/config/settings.php';
+    }
+    return $s;
+}
+
+/**
+ * Trimite o cerere în proces. $files = ['camp' => ['cale' => '/abs/fisier', 'nume' => 'x.pdf']].
+ */
+function cerere(string $metoda, string $cale, array $body = [], array $files = []): \Psr\Http\Message\ResponseInterface
+{
+    $req = (new ServerRequestFactory())->createServerRequest($metoda, $cale, ['REMOTE_ADDR' => '127.0.0.1']);
+    if ($body !== []) {
+        $req = $req->withParsedBody($body)->withHeader('Content-Type', 'application/x-www-form-urlencoded');
+    }
+    if ($files !== []) {
+        $uf = [];
+        foreach ($files as $camp => $f) {
+            $stream = (new StreamFactory())->createStreamFromFile($f['cale']);
+            $uf[$camp] = (new UploadedFileFactory())->createUploadedFile($stream, filesize($f['cale']), UPLOAD_ERR_OK, $f['nume']);
+        }
+        $req = $req->withUploadedFiles($uf);
+    }
+    return app()->handle($req);
+}
+
+function corp(\Psr\Http\Message\ResponseInterface $r): string
+{
+    $r->getBody()->rewind();
+    return (string) $r->getBody();
+}
+
+function final_test(): void
+{
+    $f = $GLOBALS['_fails'];
+    echo $f === 0 ? "\nOK — toate testele trec.\n" : "\n$f test(e) au eșuat.\n";
+    exit($f === 0 ? 0 : 1);
+}
