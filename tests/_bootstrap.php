@@ -71,3 +71,14 @@ function final_test(): void
     echo $f === 0 ? "\nOK — toate testele trec.\n" : "\n$f test(e) au eșuat.\n";
     exit($f === 0 ? 0 : 1);
 }
+
+/** Creează un utilizator temporar, pune sesiunea de admin și întoarce id-ul. Șterge-l în finally. */
+function logheaza_test(): int
+{
+    $email = 'test-' . bin2hex(random_bytes(4)) . '@example.com';
+    pdo()->prepare('INSERT INTO utilizatori (email, nume, parola_hash) VALUES (:e, :n, :h)')
+        ->execute(['e' => $email, 'n' => 'Test', 'h' => password_hash('x', PASSWORD_DEFAULT)]);
+    $id = (int) pdo()->lastInsertId();
+    $_SESSION = ['csrf' => 'abc', 'admin_user' => ['id' => $id, 'email' => $email, 'nume' => 'Test']];
+    return $id;
+}

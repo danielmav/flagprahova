@@ -1,0 +1,16 @@
+:root { --fp-albastru: #0B4F9C; --fp-albastru-inchis: #083A72; --fp-deschis: #E8F1FB; }
+.adm { background: #f5f7fa; min-height: 100vh; }
+.adm .bg-primary { background: var(--fp-albastru) !important; }
+.adm .btn-primary { background: var(--fp-albastru); border-color: var(--fp-albastru); }
+.adm .btn-primary:hover { background: var(--fp-albastru-inchis); border-color: var(--fp-albastru-inchis); }
+.adm-side { width: 230px; background: #fff; border-right: 1px solid #e3e8ee; }
+.adm-nav__link { color: #1b2430; padding: .75rem 1.25rem; border-left: 3px solid transparent; }
+.adm-nav__link:hover, .adm-nav__link.active { background: var(--fp-deschis); border-left-color: var(--fp-albastru); color: var(--fp-albastru); }
+.adm-main { padding: 1.5rem; }
+@media (min-width: 992px) {
+  .adm--nav .adm-side { position: fixed; top: 56px; bottom: 0; left: 0; }
+  .adm--nav .adm-main { margin-left: 230px; }
+}
+.adm-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.adm-login__card { width: 100%; max-width: 420px; }
+.adm-card:hover { border-color: var(--fp-albastru); }

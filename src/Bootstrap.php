@@ -86,6 +86,7 @@ final class Bootstrap
      */
     private static function extinde(array &$container, string $root, \Twig\Environment $env): void
     {
-        // Task 3+: auth, throttle, meniu, fisiere, setari, mailer.
+        $container['auth']           = new Admin\Auth($container['db']);
+        $container['login_throttle'] = new Admin\LoginThrottle($container['db'], 'admin');
     }
 }
