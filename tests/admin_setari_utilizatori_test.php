@@ -35,7 +35,7 @@ try {
     $r = cerere('GET', '/admin/parola/' . $token);
     ok('GET parola/{token} => 200', $r->getStatusCode() === 200 && str_contains(corp($r), 'name="parola2"'));
     $r = cerere('POST', '/admin/parola/' . $token, ['_csrf' => 'abc', 'parola' => 'scurta', 'parola2' => 'scurta']);
-    ok('parolă scurtă => 200 cu eroare', $r->getStatusCode() === 200 && str_contains(corp($r), '10'));
+    ok('parolă scurtă => 200 cu eroare', $r->getStatusCode() === 200 && str_contains(corp($r), 'cel puțin 10 caractere'));
     $r = cerere('POST', '/admin/parola/' . $token, ['_csrf' => 'abc', 'parola' => 'Parola-Lunga-123', 'parola2' => 'Parola-Lunga-123']);
     ok('parolă bună => 302 la login?ok=parola', $r->getStatusCode() === 302 && str_contains($r->getHeaderLine('Location'), 'ok=parola'));
     ok('  login-ul merge cu noua parolă', (new App\Admin\Auth($db))->attempt($email2, 'Parola-Lunga-123') === true);
@@ -47,6 +47,50 @@ try {
     $r1 = cerere('POST', '/admin/parola-uitata', ['_csrf' => 'abc', 'email' => $email2]);
     $r2 = cerere('POST', '/admin/parola-uitata', ['_csrf' => 'abc', 'email' => 'nimeni-' . bin2hex(random_bytes(2)) . '@example.com']);
     ok('parola-uitata: răspuns identic', corp($r1) === corp($r2) && str_contains(corp($r1), 'Dacă adresa există'));
+
+    $u2id  = (int) $u2['id'];
+    $tokrepo = new App\Admin\PasswordTokenRepository($db);
+    $numaraTokens = static fn(): int => (int) pdo()->query('SELECT COUNT(*) FROM parola_tokens WHERE utilizator_id = ' . $u2id)->fetchColumn();
+
+    // repository: issue(.., false) NU arde invitația veche; pastreazaDoar() o arde
+    $vechi = $tokrepo->issue($u2id);
+    $nou   = $tokrepo->issue($u2id, false);
+    ok('issue(false) lasă tokenul vechi valabil', $tokrepo->esteValabil($vechi) && $tokrepo->esteValabil($nou));
+    $tokrepo->invalideazaToken($nou);
+    ok('  email eșuat => moare doar tokenul nou', !$tokrepo->esteValabil($nou) && $tokrepo->esteValabil($vechi));
+    $nou2 = $tokrepo->issue($u2id, false);
+    $tokrepo->pastreazaDoar($u2id, $nou2);
+    ok('  pastreazaDoar() arde vechiul, păstrează noul', !$tokrepo->esteValabil($vechi) && $tokrepo->esteValabil($nou2));
+
+    // token expirat => invalid, iar GET redirectează
+    $pdo->exec('UPDATE parola_tokens SET expira_la = NOW() - INTERVAL 1 DAY WHERE utilizator_id = ' . $u2id . ' AND folosit_la IS NULL');
+    ok('token expirat => esteValabil false', $tokrepo->esteValabil($nou2) === false);
+    $r = cerere('GET', '/admin/parola/' . $nou2);
+    ok('  GET pe token expirat => 302', $r->getStatusCode() === 302);
+
+    // POST cu CSRF greșit pe /parola/{token} nu schimbă parola
+    $tokCsrf = $tokrepo->issue($u2id);
+    $r = cerere('POST', '/admin/parola/' . $tokCsrf, ['_csrf' => 'gresit', 'parola' => 'Alta-Parola-999', 'parola2' => 'Alta-Parola-999']);
+    ok('parola/{token} cu CSRF greșit => 200, parola neschimbată', $r->getStatusCode() === 200
+        && (new App\Admin\Auth($db))->attempt($email2, 'Parola-Lunga-123') === true
+        && (new App\Admin\Auth($db))->attempt($email2, 'Alta-Parola-999') === false);
+    ok('  tokenul rămâne valabil după CSRF greșit', $tokrepo->esteValabil($tokCsrf));
+
+    // POST fără CSRF valid pe /parola-uitata nu emite token
+    $_SESSION = ['csrf' => 'abc'];
+    $inainte = $numaraTokens();
+    $r = cerere('POST', '/admin/parola-uitata', ['_csrf' => 'gresit', 'email' => $email2]);
+    ok('parola-uitata cu CSRF greșit => niciun token nou', $r->getStatusCode() === 200 && $numaraTokens() === $inainte);
+
+    // throttle scope 'parola': după 5 încercări, a 6-a nu mai emite token
+    $pdo->exec("DELETE FROM login_incercari WHERE scope = 'parola'");
+    for ($i = 0; $i < 5; $i++) {
+        cerere('POST', '/admin/parola-uitata', ['_csrf' => 'abc', 'email' => $email2]);
+    }
+    ok('throttle: 5 încercări înregistrate', (int) $pdo->query("SELECT COUNT(*) FROM login_incercari WHERE scope = 'parola'")->fetchColumn() === 5);
+    $inainte = $numaraTokens();
+    cerere('POST', '/admin/parola-uitata', ['_csrf' => 'abc', 'email' => $email2]);
+    ok('  a 6-a e blocată => niciun token nou', $numaraTokens() === $inainte);
 
     // ștergere: nu pe sine, nu ultimul
     $_SESSION = ['csrf' => 'abc', 'admin_user' => ['id' => $uid, 'email' => 'x', 'nume' => 'Test']];

@@ -18,6 +18,9 @@ final class UtilizatoriController
 {
     use Helpers;
 
+    /** Durata fixă, în milisecunde, a unui POST pe „parolă uitată". */
+    private const PRAG_MS = 1500;
+
     private Auth $auth;
     private array $settings;
     private UtilizatoriRepository $utilizatori;
@@ -100,6 +103,7 @@ final class UtilizatoriController
         if ($request->getMethod() === 'GET') {
             return $this->render($response, 'admin/parola_uitata.twig', ['trimis' => false, 'utilizator' => null]);
         }
+        $start = (float) hrtime(true);
         $ip = ip_hash($request->getServerParams()['REMOTE_ADDR'] ?? null);
         if ($this->csrfOk($request) && !$this->throttle->tooMany($ip)) {
             $this->throttle->record($ip);
@@ -109,6 +113,8 @@ final class UtilizatoriController
                 $this->trimiteLink((int) $u['id']);
             }
         }
+        // În TOATE ramurile POST, inclusiv CSRF respins și throttle.
+        $this->asteaptaPanaLaPrag($start);
         return $this->render($response, 'admin/parola_uitata.twig', ['trimis' => true, 'utilizator' => null]);
     }
 
@@ -142,15 +148,45 @@ final class UtilizatoriController
         return $this->redirect($response, '/login?ok=parola');
     }
 
+    /**
+     * Emite un token și trimite linkul. Invitația ANTERIOARĂ moare abia după
+     * ce emailul a plecat cu adevărat: dacă SMTP-ul e căzut, omul rămâne cu
+     * linkul vechi, în loc să rămână fără niciunul.
+     */
     private function trimiteLink(int $uid): bool
     {
-        $u   = $this->utilizatori->gaseste($uid);
-        $raw = $this->tokens->issue($uid);
-        if ($u === null || $raw === null) {
+        $u = $this->utilizatori->gaseste($uid);
+        if ($u === null) {
+            return false; // niciun token pentru un cont care nu există
+        }
+        $raw = $this->tokens->issue($uid, false);
+        if ($raw === null) {
             return false;
         }
         $link = $this->settings['app']['url'] . $this->settings['app']['base_path'] . $this->adminPath() . '/parola/' . $raw;
         $html = $this->twig->fetch('mail/parola.twig', ['nume' => $u['nume'], 'link' => $link, 'zile' => PasswordTokenRepository::TTL_ZILE]);
-        return $this->mailer->send((string) $u['email'], 'Setarea parolei — administrare FLAG Prahova', $html);
+        if (!$this->mailer->send((string) $u['email'], 'Setarea parolei — administrare FLAG Prahova', $html)) {
+            $this->tokens->invalideazaToken($raw);
+            return false;
+        }
+        $this->tokens->pastreazaDoar($uid, $raw);
+        return true;
+    }
+
+    /**
+     * Ține durata unui POST pe „parolă uitată" ~constantă, indiferent de ramură.
+     *
+     * Textul răspunsului e deja identic pentru o adresă cunoscută și una
+     * necunoscută, dar trimiterea SMTP e sincronă și se face doar pentru
+     * adresele care există — fără egalizare, cronometrul ar spune ce textul
+     * ascunde.
+     */
+    private function asteaptaPanaLaPrag(float $startNs): void
+    {
+        $scursMs = (hrtime(true) - $startNs) / 1_000_000;
+        $ramasMs = self::PRAG_MS - $scursMs;
+        if ($ramasMs > 0) {
+            usleep((int) round($ramasMs * 1000));
+        }
     }
 }

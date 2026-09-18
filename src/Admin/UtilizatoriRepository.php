@@ -23,7 +23,7 @@ final class UtilizatoriRepository
 
     public function toti(): array
     {
-        return $this->pdo->query('SELECT id, email, nume, ultimul_login, creat_la, parola_hash <> "" AS are_parola FROM utilizatori ORDER BY nume, email')->fetchAll();
+        return $this->pdo->query("SELECT id, email, nume, ultimul_login, creat_la, parola_hash <> '' AS are_parola FROM utilizatori ORDER BY nume, email")->fetchAll();
     }
 
     public function numara(): int
@@ -47,7 +47,7 @@ final class UtilizatoriRepository
 
     public function creeaza(string $email, string $nume): int
     {
-        $this->pdo->prepare('INSERT INTO utilizatori (email, nume, parola_hash) VALUES (:e, :n, "")')->execute(['e' => $email, 'n' => $nume]);
+        $this->pdo->prepare("INSERT INTO utilizatori (email, nume, parola_hash) VALUES (:e, :n, '')")->execute(['e' => $email, 'n' => $nume]);
         return (int) $this->pdo->lastInsertId();
     }
 
@@ -56,12 +56,18 @@ final class UtilizatoriRepository
         $this->pdo->prepare('UPDATE utilizatori SET parola_hash = :h WHERE id = :id')->execute(['h' => password_hash($parola, PASSWORD_DEFAULT), 'id' => $id]);
     }
 
-    /** Refuză ștergerea ultimului cont: fără el nimeni n-ar mai putea intra în admin. */
+    /**
+     * Refuză ștergerea ultimului cont: fără el nimeni n-ar mai putea intra în
+     * admin. Întoarce true doar dacă a dispărut chiar un rând — `execute()`
+     * reușește și când id-ul nu există, iar apelantul ar raporta „Cont șters".
+     */
     public function sterge(int $id): bool
     {
         if ($this->numara() <= 1) {
             return false;
         }
-        return $this->pdo->prepare('DELETE FROM utilizatori WHERE id = :id')->execute(['id' => $id]);
+        $st = $this->pdo->prepare('DELETE FROM utilizatori WHERE id = :id');
+        $st->execute(['id' => $id]);
+        return $st->rowCount() === 1;
     }
 }

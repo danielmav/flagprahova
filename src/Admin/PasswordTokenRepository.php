@@ -41,21 +41,29 @@ final class PasswordTokenRepository
     }
 
     /**
-     * Emite un token proaspăt și le invalidează pe toate cele anterioare ale
-     * aceluiași cont. Întoarce tokenul BRUT (de pus în link), null la eșec.
+     * Emite un token proaspăt. Întoarce tokenul BRUT (de pus în link), null la
+     * eșec.
      *
-     * Invalidarea prealabilă contează la „Trimite link" repetat: fără ea,
-     * fiecare retrimitere ar lăsa în urmă încă un link valabil 7 zile, iar un
-     * email vechi recuperat dintr-o inbox ar rămâne o cale de intrare.
+     * `$invalideazaVechi` controlează CÂND moare invitația anterioară. Implicit
+     * moare imediat, ca la „Trimite link" repetat: altfel fiecare retrimitere
+     * ar lăsa în urmă încă un link valabil 7 zile, iar un email vechi recuperat
+     * dintr-o inbox ar rămâne o cale de intrare.
+     *
+     * Apelantul care chiar trimite emailul dă `false` și, DOAR dacă mesajul a
+     * plecat, apelează `pastreazaDoar()`. Altfel, un SMTP căzut ar arde
+     * invitația veche fără să livreze una nouă — utilizatorul ar rămâne fără
+     * nicio cale de intrare.
      */
-    public function issue(int $utilizatorId): ?string
+    public function issue(int $utilizatorId, bool $invalideazaVechi = true): ?string
     {
         if (!$this->pdo) {
             return null;
         }
         $raw = bin2hex(random_bytes(32));
         try {
-            $this->invalideazaPentru($utilizatorId);
+            if ($invalideazaVechi) {
+                $this->invalideazaPentru($utilizatorId);
+            }
 
             $stmt = $this->pdo->prepare(
                 'INSERT INTO parola_tokens (utilizator_id, token_hash, expira_la)
@@ -162,6 +170,46 @@ final class PasswordTokenRepository
             return $v === false ? null : (string) $v;
         } catch (Throwable) {
             return null;
+        }
+    }
+
+    /**
+     * Lasă valabil DOAR tokenul dat; le marchează folosite pe toate celelalte
+     * ale aceluiași cont. Se apelează după ce emailul a plecat cu adevărat.
+     */
+    public function pastreazaDoar(int $utilizatorId, string $raw): void
+    {
+        if (!$this->pdo || $raw === '') {
+            return;
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                'UPDATE parola_tokens SET folosit_la = NOW()
+                 WHERE utilizator_id = :u AND folosit_la IS NULL AND token_hash <> :h'
+            );
+            $stmt->execute(['u' => $utilizatorId, 'h' => hash('sha256', $raw)]);
+        } catch (Throwable $e) {
+            error_log('[flagprahova][admin] pastrare token nou esuata: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Arde un singur token — folosit când emailul care-l conținea n-a plecat.
+     * Invitația anterioară a contului rămâne neatinsă, deci valabilă.
+     */
+    public function invalideazaToken(string $raw): void
+    {
+        if (!$this->pdo || $raw === '') {
+            return;
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                'UPDATE parola_tokens SET folosit_la = NOW()
+                 WHERE token_hash = :h AND folosit_la IS NULL'
+            );
+            $stmt->execute(['h' => hash('sha256', $raw)]);
+        } catch (Throwable $e) {
+            error_log('[flagprahova][admin] invalidare token esuata: ' . $e->getMessage());
         }
     }
 

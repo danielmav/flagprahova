@@ -60,15 +60,16 @@ final class Mailer
     public function send(string $to, string $subject, string $htmlBody, ?string $replyTo = null, ?string $cc = null): bool
     {
         if ((string) $this->config['smtp_host'] === '') {
-            $logat = $this->writeToLog($to, $subject, $htmlBody, $replyTo, $cc);
-
+            // Corpul ajunge în mail.log DOAR pe dev. În producție ar însemna un
+            // fișier plin de linkuri de resetare cu tokenul brut în clar, într-un
+            // director care poate fi citit de orice altceva rulează pe cont.
             if ($this->esteProductie()) {
                 error_log('[flagprahova][mail] SMTP_HOST gol in productie - mesajul NU a plecat catre ' . $to);
                 $this->writeToErrorLog($to, 'SMTP_HOST gol in productie - mesajul nu a plecat');
                 return false;
             }
 
-            return $logat;
+            return $this->writeToLog($to, $subject, $htmlBody, $replyTo, $cc);
         }
 
         try {
