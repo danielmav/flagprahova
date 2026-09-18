@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Admin;
 
 use App\Fisiere\Repository as Fisiere;
+use App\Meniu\GalerieRepository;
 use App\Meniu\Repository as Meniu;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -17,6 +18,7 @@ final class MeniuController
     private array $settings;
     private Meniu $meniu;
     private Fisiere $fisiere;
+    private GalerieRepository $galerie;
 
     public function __construct(private Twig $twig, array $container)
     {
@@ -24,6 +26,7 @@ final class MeniuController
         $this->settings = $container['settings'];
         $this->meniu    = $container['meniu'];
         $this->fisiere  = $container['fisiere'];
+        $this->galerie  = $container['galerie'];
     }
 
     private function sectiuneCurenta(Request $request, ?int $id = null): array
@@ -76,7 +79,7 @@ final class MeniuController
             'sectiune' => $sec,
             'parinti'  => $this->optiuniParinte((int) $sec['id'], isset($intrare['id']) ? (int) $intrare['id'] : null),
             'fisier'   => $fisier,
-            'galerie'  => [],
+            'galerie'  => isset($intrare['id']) ? $this->galerie->imagini((int) $intrare['id']) : [],
             'eroare'   => $eroare,
             'tipuri'   => Meniu::TIPURI,
         ]);
@@ -152,6 +155,8 @@ final class MeniuController
         if ($date['tip'] !== 'link') { $date['url'] = ''; }
         if ($date['tip'] !== 'pagina') { $date['continut_html'] = ''; $date['sablon'] = 'standard'; }
 
+        if ($date['tip'] === 'pagina') { $date['continut_html'] = \App\Support\Html::curata($date['continut_html']); }
+
         if ($id === null) {
             $id = $this->meniu->creeaza($date);
             $this->flash('ok', 'Intrare adăugată.');
@@ -163,8 +168,19 @@ final class MeniuController
         return $this->redirect($response, '/meniu?sectiune=' . $sec['slug']);
     }
 
-    /** Extins în Task 8 (imaginile galeriei). */
-    private function dupaSalvare(int $id, Request $request): void {}
+    /** Scrie imaginile galeriei trimise de formular (ordinea câmpurilor = ordinea din galerie). */
+    private function dupaSalvare(int $id, Request $request): void
+    {
+        $in = (array) $request->getParsedBody();
+        if (($in['tip'] ?? '') !== 'galerie') { return; }
+        $ids = (array) ($in['galerie_fisier_id'] ?? []);
+        $leg = (array) ($in['galerie_legenda'] ?? []);
+        $set = [];
+        foreach (array_values($ids) as $i => $fid) {
+            $set[] = ['fisier_id' => (int) $fid, 'legenda' => (string) ($leg[$i] ?? '')];
+        }
+        $this->galerie->seteaza($id, $set);
+    }
 
     public function sterge(Request $request, Response $response, array $args): Response
     {

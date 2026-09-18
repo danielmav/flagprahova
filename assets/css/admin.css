@@ -28,3 +28,6 @@
 .sortable-ghost { opacity: .4; }
 .adm-picker__frame { width: 100%; height: 70vh; border: 0; }
 #f-editor { min-height: 320px; }
+
+.adm-galerie__item{display:flex;align-items:center;gap:.5rem;background:#fff;border:1px solid #e3e8ee;border-radius:6px;padding:.4rem;margin:.25rem 0}
+.adm-galerie__item img{width:64px;height:48px;object-fit:cover;border-radius:4px}

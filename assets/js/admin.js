@@ -105,6 +105,19 @@ document.addEventListener('click', function (ev) {
     modal.hide();
   });
 
+  var gal = document.getElementById('adm-galerie');
+  if (gal) {
+    if (window.Sortable) new Sortable(gal, { handle: '.adm-nod__grip', animation: 150 });
+    window._galerieAdauga = function (d) {
+      if (gal.querySelector('[data-fisier-id="' + d.id + '"]')) return;
+      var li = document.getElementById('adm-galerie-sablon').content.firstElementChild.cloneNode(true);
+      li.querySelectorAll('[data-nume]').forEach(function (i) { i.name = i.dataset.nume; });
+      li.dataset.fisierId = d.id; li.querySelector('img').src = d.url; li.querySelector('input[type=hidden]').value = d.id;
+      gal.appendChild(li);
+    };
+    gal.addEventListener('click', function (ev) { var b = ev.target.closest('[data-scoate]'); if (b) b.closest('li').remove(); });
+  }
+
   var ed = document.getElementById('f-editor');
   if (ed && window.Quill) {
     var q = new Quill(ed, { theme: 'snow', modules: { toolbar: {
