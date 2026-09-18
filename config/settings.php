@@ -19,6 +19,15 @@ return [
         'user' => $_ENV['DB_USER'] ?? 'root',
         'pass' => $_ENV['DB_PASS'] ?? '',
     ],
+    // Baza WordPress veche, DOAR pentru scripturile de migrare (read-only).
+    'db_wp' => [
+        'host' => $_ENV['DB_WP_HOST'] ?? ($_ENV['DB_HOST'] ?? '127.0.0.1'),
+        'port' => $_ENV['DB_WP_PORT'] ?? ($_ENV['DB_PORT'] ?? '3306'),
+        'name' => $_ENV['DB_WP_NAME'] ?? '',
+        'user' => $_ENV['DB_WP_USER'] ?? ($_ENV['DB_USER'] ?? 'root'),
+        'pass' => $_ENV['DB_WP_PASS'] ?? ($_ENV['DB_PASS'] ?? ''),
+        'prefix' => $_ENV['DB_WP_PREFIX'] ?? 'wpt9_',
+    ],
     'mail' => [
         'from'        => $_ENV['MAIL_FROM'] ?? 'noreply@flagprahova.ro',
         'from_name'   => $_ENV['MAIL_FROM_NAME'] ?? 'FLAG Prahova',
