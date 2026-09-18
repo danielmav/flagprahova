@@ -1,0 +1,2 @@
+# Fals pozitiv: cod minificat din vendor (Quill), nu un secret.
+assets/vendor/quill/quill.min.js:generic-api-key:7

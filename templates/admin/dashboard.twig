@@ -1,0 +1,9 @@
+{% extends 'admin/layout.twig' %}
+{% block title %}Panou{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Bun venit</h1>
+<div class="row g-3">
+    <div class="col-md-6"><a class="card adm-card text-decoration-none" href="{{ base }}{{ admin_path }}/meniu?sectiune=2021-2027"><div class="card-body"><h2 class="h5">FLAG Prahova 2021-2027</h2><p class="mb-0 text-muted">Meniul și documentele perioadei curente.</p></div></a></div>
+    <div class="col-md-6"><a class="card adm-card text-decoration-none" href="{{ base }}{{ admin_path }}/meniu?sectiune=2014-2020"><div class="card-body"><h2 class="h5">FLAG Prahova 2014-2020</h2><p class="mb-0 text-muted">Arhiva perioadei anterioare.</p></div></a></div>
+</div>
+{% endblock %}

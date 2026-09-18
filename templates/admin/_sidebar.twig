@@ -1,0 +1,16 @@
+{% set intrari = [
+    {'ruta': '/meniu',       'eticheta': 'Meniu'},
+    {'ruta': '/fisiere',     'eticheta': 'Fișiere'},
+    {'ruta': '/setari',      'eticheta': 'Setări'},
+    {'ruta': '/utilizatori', 'eticheta': 'Utilizatori'},
+    {'ruta': '/mesaje',      'eticheta': 'Mesaje'},
+] %}
+<aside class="offcanvas-lg offcanvas-start adm-side" tabindex="-1" id="adm-side">
+    <div class="offcanvas-header d-lg-none"><span class="fw-bold">Administrare</span>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#adm-side" aria-label="Închide"></button></div>
+    <ul class="nav flex-column adm-nav">
+        {% for i in intrari %}
+            <li class="nav-item"><a class="adm-nav__link nav-link" href="{{ base }}{{ admin_path }}{{ i.ruta }}">{{ i.eticheta }}</a></li>
+        {% endfor %}
+    </ul>
+</aside>

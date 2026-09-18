@@ -1,0 +1,35 @@
+{% extends 'admin/layout.twig' %}
+{% block title %}Mesaje{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Mesaje din formularul de contact</h1>
+
+<div class="table-responsive">
+<table class="table table-hover align-middle adm-table">
+    <thead><tr><th>Data</th><th class="d-none d-md-table-cell">Secțiune</th><th>Nume</th><th>Email</th><th>Mesaj</th><th class="text-center">Email trimis</th></tr></thead>
+    <tbody>
+    {% for m in mesaje %}
+        <tr>
+            <td class="small text-nowrap">{{ m.trimis_la|date('d.m.Y H:i') }}</td>
+            <td class="d-none d-md-table-cell small">{{ m.sectiune ?: '—' }}</td>
+            <td>{{ m.nume }}</td>
+            <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>
+            <td>{{ m.mesaj|nl2br }}</td>
+            <td class="text-center">{{ m.email_trimis ? '✓' : '✗' }}</td>
+        </tr>
+    {% else %}
+        <tr><td colspan="6" class="text-muted">Niciun mesaj.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% if pagini > 1 %}
+<nav aria-label="Paginare mesaje">
+    <ul class="pagination">
+        {% for i in 1..pagini %}
+            <li class="page-item{{ i == pagina ? ' active' }}"><a class="page-link" href="{{ base }}{{ admin_path }}/mesaje?p={{ i }}">{{ i }}</a></li>
+        {% endfor %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

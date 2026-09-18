@@ -1,0 +1,37 @@
+# FLAG Prahova — front controller routing (Laragon docroot = project root)
+
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP_HOST} !^(flagprahova\.test|localhost|127\.0\.0\.1)(:\d+)?$ [NC]
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Block direct access to application internals
+    RewriteRule ^(src|templates|config|storage|vendor|database|materiale|docs|tests|\.git)/ - [F,L]
+    RewriteRule ^(composer\.(json|lock)|\.env.*|\.cpanel\.yml|.*\.md)$ - [F,L]
+
+    # Serve real existing files / directories directly (assets, media, etc.)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Route everything else through the front controller
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Caching pentru assets statice
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 7 days"
+    ExpiresByType application/javascript "access plus 7 days"
+    ExpiresByType image/webp "access plus 30 days"
+    ExpiresByType image/avif "access plus 30 days"
+    ExpiresByType image/jpeg "access plus 30 days"
+    ExpiresByType image/png "access plus 30 days"
+    ExpiresByType font/woff2 "access plus 365 days"
+</IfModule>

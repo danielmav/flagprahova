@@ -1,0 +1,25 @@
+<label class="form-label">Imagini</label>
+<p class="form-text">Adaugă imagini din Fișiere (le poți încărca acolo, mai multe deodată). Trage-le ca să schimbi ordinea.</p>
+<button class="btn btn-outline-primary mb-2" type="button" data-picker="galerie">+ Adaugă imagine</button>
+<ol class="adm-galerie list-unstyled" id="adm-galerie">
+    {% for g in galerie %}
+    <li class="adm-galerie__item" data-fisier-id="{{ g.fisier_id }}">
+        <span class="adm-nod__grip">⋮⋮</span>
+        <img src="{{ base }}{{ fisiere_url }}/{{ g.cale }}" alt="">
+        <input type="hidden" name="galerie_fisier_id[]" value="{{ g.fisier_id }}">
+        <input class="form-control form-control-sm" name="galerie_legenda[]" value="{{ g.legenda }}" placeholder="Legendă (opțional)">
+        <button class="btn btn-sm btn-outline-danger" type="button" data-scoate>Scoate</button>
+    </li>
+    {% endfor %}
+</ol>
+{# Șablonul are numele în `data-nume`: le pune JS la clonare, ca inputurile din
+   <template> să nu semene cu rânduri reale (n-ar fi trimise oricum). #}
+<template id="adm-galerie-sablon">
+    <li class="adm-galerie__item">
+        <span class="adm-nod__grip">⋮⋮</span>
+        <img src="" alt="">
+        <input type="hidden" data-nume="galerie_fisier_id[]" value="">
+        <input class="form-control form-control-sm" data-nume="galerie_legenda[]" value="" placeholder="Legendă (opțional)">
+        <button class="btn btn-sm btn-outline-danger" type="button" data-scoate>Scoate</button>
+    </li>
+</template>

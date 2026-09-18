@@ -1,0 +1,26 @@
+{% extends 'admin/layout.twig' %}
+{% block title %}Parolă uitată{% endblock %}
+{% block content %}
+<div class="adm-login">
+    <div class="card shadow-sm adm-login__card">
+        <div class="card-body">
+            <h1 class="h4 mb-3">Parolă uitată</h1>
+            {% if trimis %}
+                <div class="alert alert-success mb-3" role="alert">Dacă adresa există în sistem, ai primit un email cu linkul de resetare (valabil {{ valabilitate }}).</div>
+                <p class="mb-0 small"><a href="{{ base }}{{ admin_path }}/login">Înapoi la autentificare</a></p>
+            {% else %}
+                <p class="text-muted small">Scrie adresa contului tău de administrare. Îți trimitem un link din care îți poți alege o parolă nouă.</p>
+                <form method="post" action="{{ base }}{{ admin_path }}/parola-uitata">
+                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                    <div class="mb-3">
+                        <label class="form-label" for="f-email">Email</label>
+                        <input class="form-control" id="f-email" type="email" name="email" required autocomplete="username" autofocus>
+                    </div>
+                    <button class="btn btn-primary w-100" type="submit">Trimite link</button>
+                </form>
+                <p class="mt-3 mb-0 small"><a href="{{ base }}{{ admin_path }}/login">Înapoi la autentificare</a></p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

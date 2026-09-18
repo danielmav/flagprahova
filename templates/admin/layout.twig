@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ro">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>{% block title %}Administrare{% endblock %} · FLAG Prahova</title>
+    <script>window.ADMIN_BASE={{ (base ~ admin_path)|json_encode|raw }};window.CSRF={{ csrf|json_encode|raw }};</script>
+    <link rel="stylesheet" href="{{ base }}/assets/vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ base }}/assets/vendor/quill/quill.snow.css">
+    <link rel="stylesheet" href="{{ base }}/assets/css/admin.css">
+    {% block head %}{% endblock %}
+</head>
+<body class="adm{% if utilizator %} adm--nav{% endif %}">
+{% if utilizator %}
+    <nav class="navbar navbar-dark bg-primary adm-topbar">
+        <div class="container-fluid">
+            <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#adm-side" aria-label="Meniu"><span class="navbar-toggler-icon"></span></button>
+            <a class="navbar-brand" href="{{ base }}{{ admin_path }}">FLAG Prahova · administrare</a>
+            <div class="d-flex align-items-center gap-2">
+                <a class="btn btn-sm btn-outline-light" href="{{ base }}/" target="_blank" rel="noopener">Vezi situl</a>
+                <form method="post" action="{{ base }}{{ admin_path }}/logout" class="d-flex align-items-center gap-2 m-0">
+                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                    <span class="text-white-50 small d-none d-md-inline">{{ utilizator.nume ?: utilizator.email }}</span>
+                    <button class="btn btn-sm btn-outline-light" type="submit">Ieșire</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+    {% include 'admin/_sidebar.twig' %}
+{% endif %}
+<main class="adm-main">
+    {% if flash %}
+        <div class="alert alert-{{ flash.tip == 'ok' ? 'success' : 'danger' }} adm-flash" role="alert">{{ flash.mesaj }}</div>
+    {% endif %}
+    {% block content %}{% endblock %}
+</main>
+<script src="{{ base }}/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="{{ base }}/assets/vendor/sortable/Sortable.min.js"></script>
+<script src="{{ base }}/assets/vendor/quill/quill.min.js"></script>
+<script src="{{ base }}/assets/js/admin.js" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

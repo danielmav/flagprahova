@@ -1,0 +1,30 @@
+---
+# cPanel Git™ Version Control — deploy DECUPLAT (staging).
+# Repo-ul (cu .git, docs/, database/, etc.) trăiește în ~/repositories/flagprahova,
+# ÎN AFARA docroot-ului. La „Deploy HEAD Commit" se face composer install în repo și
+# se copiază în public_html/nou DOAR fișierele runtime. Fișierele interne (docs/, database/,
+# .git, composer.*, .cpanel.yml, .env.example) NU ajung niciodată în docroot.
+#
+# STAGING: DEPLOYPATH e public_html/nou. La lansare se schimbă în public_html.
+# .env și storage/ există DOAR în docroot și nu se ating la deploy (nu-s în listele de mai jos).
+# Setup DB inițial (migrate/seed/create_admin) se face manual, o singură dată, din repo.
+deployment:
+  tasks:
+    - export REPO=/home/flagprah/repositories/flagprahova
+    - export DEPLOYPATH=/home/flagprah/public_html/nou
+    - export PHP=/opt/cpanel/ea-php83/root/usr/bin/php
+    - cd $REPO && $PHP /home/flagprah/composer.phar install --no-dev --optimize-autoloader --no-interaction
+    - /bin/mkdir -p $DEPLOYPATH/storage/cache/twig $DEPLOYPATH/storage/logs $DEPLOYPATH/fisiere
+    # fisiere/.htaccess blocheaza executia PHP in directorul de uploaduri. Continutul
+    # lui vine din repo (nu-l scrie nimeni pe host), deci se copiaza la fiecare deploy:
+    # fara el, un fisier urcat cu extensie PHP ar deveni cod executabil.
+    - /bin/cp -a $REPO/fisiere/.htaccess $DEPLOYPATH/fisiere/
+    # rsync nu e disponibil pe acest host => copiem cu cp (rm dest intai, ca sa nu se cuibareasca).
+    # Nu atingem: .env, storage/, continutul din fisiere/ (doar .htaccess-ul de mai sus),
+    # .htaccess-ul din docroot, .user.ini, php.ini, cgi-bin, .well-known.
+    - /bin/rm -rf $DEPLOYPATH/src $DEPLOYPATH/templates $DEPLOYPATH/config $DEPLOYPATH/assets $DEPLOYPATH/vendor
+    - /bin/cp -a $REPO/src $REPO/templates $REPO/config $REPO/assets $REPO/vendor $DEPLOYPATH/
+    # NU copiem .htaccess: pe acest host MultiPHP Manager scrie blocul de handler PHP
+    # (ea-php83) direct in .htaccess-ul din docroot; suprascrierea l-ar sterge -> revenire la PHP implicit.
+    # Regulile de rutare/securitate din .htaccess se seteaza o singura data manual.
+    - /bin/cp -a $REPO/index.php $DEPLOYPATH/

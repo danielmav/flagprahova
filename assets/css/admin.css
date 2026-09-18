@@ -1,0 +1,33 @@
+:root { --fp-albastru: #0B4F9C; --fp-albastru-inchis: #083A72; --fp-deschis: #E8F1FB; }
+.adm { background: #f5f7fa; min-height: 100vh; }
+.adm .bg-primary { background: var(--fp-albastru) !important; }
+.adm .btn-primary { background: var(--fp-albastru); border-color: var(--fp-albastru); }
+.adm .btn-primary:hover { background: var(--fp-albastru-inchis); border-color: var(--fp-albastru-inchis); }
+.adm-side { width: 230px; background: #fff; border-right: 1px solid #e3e8ee; }
+.adm-nav__link { color: #1b2430; padding: .75rem 1.25rem; border-left: 3px solid transparent; }
+.adm-nav__link:hover, .adm-nav__link.active { background: var(--fp-deschis); border-left-color: var(--fp-albastru); color: var(--fp-albastru); }
+.adm-main { padding: 1.5rem; }
+@media (min-width: 992px) {
+  .adm--nav .adm-side { position: fixed; top: 56px; bottom: 0; left: 0; }
+  .adm--nav .adm-main { margin-left: 230px; }
+}
+.adm-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.adm-login__card { width: 100%; max-width: 420px; }
+.adm-card:hover { border-color: var(--fp-albastru); }
+.adm-thumb{width:40px;height:40px;object-fit:cover;border-radius:4px}
+.adm-inline-input{min-width:220px}
+.adm-picker__rand{cursor:pointer}
+
+.adm-arbore { margin: 0; padding-left: 0; }
+.adm-arbore .adm-arbore { padding-left: 1.75rem; min-height: 6px; }
+.adm-nod__rand { display: flex; align-items: center; gap: .5rem; background: #fff; border: 1px solid #e3e8ee; border-radius: 6px; padding: .4rem .6rem; margin: .25rem 0; }
+.adm-nod__rand--ascuns { opacity: .6; }
+.adm-nod__grip { cursor: grab; color: #9aa5b1; user-select: none; }
+.adm-nod__titlu { flex: 1; color: #1b2430; text-decoration: none; }
+.adm-nod__actiuni { display: flex; gap: .25rem; }
+.sortable-ghost { opacity: .4; }
+.adm-picker__frame { width: 100%; height: 70vh; border: 0; }
+#f-editor { min-height: 320px; }
+
+.adm-galerie__item{display:flex;align-items:center;gap:.5rem;background:#fff;border:1px solid #e3e8ee;border-radius:6px;padding:.4rem;margin:.25rem 0}
+.adm-galerie__item img{width:64px;height:48px;object-fit:cover;border-radius:4px}

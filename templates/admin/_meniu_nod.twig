@@ -1,0 +1,21 @@
+{% set icon = {pagina: '📄', document: '📎', dosar: '📁', link: '🔗', galerie: '🖼️'} %}
+<li class="adm-nod" data-id="{{ nod.id }}">
+    <div class="adm-nod__rand {{ nod.vizibil ? '' : 'adm-nod__rand--ascuns' }}">
+        <span class="adm-nod__grip" title="Trage">⋮⋮</span>
+        <span class="adm-nod__tip" title="{{ nod.tip }}">{{ icon[nod.tip] }}</span>
+        <a class="adm-nod__titlu" href="{{ base }}{{ admin_path }}/meniu/{{ nod.id }}">{{ nod.titlu }}</a>
+        {% if not nod.vizibil %}<span class="badge text-bg-secondary">ascuns</span>{% endif %}
+        <span class="adm-nod__actiuni">
+            <a class="btn btn-sm btn-outline-secondary" href="{{ base }}{{ admin_path }}/meniu/nou?sectiune={{ sectiune.slug }}&parent={{ nod.id }}">+ sub</a>
+            <a class="btn btn-sm btn-outline-primary" href="{{ base }}{{ admin_path }}/meniu/{{ nod.id }}">Editează</a>
+            <form class="d-inline" method="post" action="{{ base }}{{ admin_path }}/meniu/{{ nod.id }}/sterge"
+                  onsubmit="return confirm('Ștergi „{{ nod.titlu|e('js') }}”{% if nod.descendenti == 1 %} și intrarea de sub ea{% elseif nod.descendenti %} și cele {{ nod.descendenti }} intrări de sub ea{% endif %}?')">
+                <input type="hidden" name="_csrf" value="{{ csrf }}">
+                <button class="btn btn-sm btn-outline-danger" type="submit">Șterge</button>
+            </form>
+        </span>
+    </div>
+    <ol class="adm-arbore list-unstyled">
+        {% for c in nod.copii %}{% include 'admin/_meniu_nod.twig' with {nod: c, sectiune: sectiune} %}{% endfor %}
+    </ol>
+</li>
