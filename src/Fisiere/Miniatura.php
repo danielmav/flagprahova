@@ -30,7 +30,7 @@ final class Miniatura
         if (is_file($dest)) { return $dest; }
         $sursa = $this->dirFisiere . '/' . $cale;
         if (!is_file($sursa)) { return null; }
-        $vechi = ini_get('memory_limit');
+        $vechi = ini_get('memory_limit') ?: '128M';
         ini_set('memory_limit', '512M');
         try {
             $im = @imagecreatefromstring((string) file_get_contents($sursa));
@@ -43,10 +43,19 @@ final class Miniatura
                 imagecopyresampled($nou, $im, 0, 0, 0, 0, $latime, $nh, $w, $h);
                 imagedestroy($im); $im = $nou;
             }
-            if (!is_dir(dirname($dest))) { mkdir(dirname($dest), 0775, true); }
-            $ok = imagewebp($im, $dest, 82);
+            $d = dirname($dest);
+            if (!is_dir($d) && !@mkdir($d, 0775, true) && !is_dir($d)) { imagedestroy($im); return null; }
+            // Scriere atomică: două cereri concurente pentru aceeași miniatură (sau un
+            // cititor la mijlocul scrierii) nu trebuie să vadă/servească un WebP trunchiat
+            // care ar trece apoi `is_file($dest)` la infinit, cu Cache-Control: immutable.
+            $tmp = $dest . '.' . uniqid('', true) . '.tmp';
+            $ok = imagewebp($im, $tmp, 82);
             imagedestroy($im);
-            return $ok ? $dest : null;
+            if (!$ok || !@rename($tmp, $dest)) {
+                @unlink($tmp);
+                return null;
+            }
+            return $dest;
         } finally {
             ini_set('memory_limit', (string) $vechi);
         }

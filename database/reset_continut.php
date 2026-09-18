@@ -9,7 +9,9 @@ declare(strict_types=1);
  *
  * Fișierele de pe disc (`fisiere/AAAA/LL/...`) NU se șterg — rulează apoi
  * `import_fisiere.php` ca să repopulezi tabela `fisiere` din arhivă (fișierele
- * deja prezente pe disc sunt doar re-înregistrate, nu rescrise).
+ * deja prezente pe disc sunt doar re-înregistrate, nu rescrise). Excepție:
+ * `fisiere/mini/` (miniaturile WebP generate la cerere) SE șterge, fiindcă
+ * se regenerează automat din fișierele originale.
  */
 
 require dirname(__DIR__) . '/vendor/autoload.php';
@@ -93,7 +95,7 @@ if (PHP_SAPI === 'cli' && isset($argv[0]) && realpath($argv[0]) === __FILE__) {
     }
     $opt = getopt('', ['da']);
     if (!array_key_exists('da', $opt)) {
-        fwrite(STDERR, "Sterge TOT continutul migrat (galerii, meniu, fisiere) si setarile editabile, apoi reface setarile din seed.php.\nFisierele de pe disc NU se sterg. Ruleaza cu --da ca sa confirmi.\n");
+        fwrite(STDERR, "Sterge TOT continutul migrat (galerii, meniu, fisiere) si setarile editabile, apoi reface setarile din seed.php.\nFisierele de pe disc NU se sterg, cu exceptia fisiere/mini/ (miniaturi generate, se regenereaza). Ruleaza cu --da ca sa confirmi.\n");
         exit(1);
     }
     $pdo = (new App\Database($settings['db']))->pdo();
