@@ -8,14 +8,11 @@ use App\Admin\MeniuController;
 use App\Admin\MesajeController;
 use App\Admin\SetariController;
 use App\Admin\UtilizatoriController;
+use App\Public\PaginiController;
 use Slim\App;
 use Slim\Views\Twig;
 
 return function (App $app, Twig $twig, array $container): void {
-    $app->get('/', function ($request, $response) use ($twig) {
-        return $twig->render($response, 'home.twig', ['titlu' => 'FLAG Prahova']);
-    })->setName('home');
-
     $app->get('/health', function ($request, $response) use ($container) {
         $ok = true;
         try { $container['db']->pdo()->query('SELECT 1'); } catch (\Throwable) { $ok = false; }
@@ -65,4 +62,10 @@ return function (App $app, Twig $twig, array $container): void {
         $msg = fn() => new MesajeController($twig, $container);
         $g->get('/mesaje', fn($rq, $rs) => $msg()->index($rq, $rs));
     })->add(new AuthMiddleware($container['auth'], $adminPath, $basePath));
+
+    // Situl public. Ultimele, ca grupul de admin să rămână grupat deasupra.
+    $pc = fn() => new PaginiController($twig, $container);
+    $app->get('/', fn($rq, $rs) => $pc()->landing($rq, $rs))->setName('home');
+    $app->get('/{perioada:[0-9]{4}-[0-9]{4}}',  fn($rq, $rs, $a) => $pc()->slash($rq, $rs, $a));
+    $app->get('/{perioada:[0-9]{4}-[0-9]{4}}/', fn($rq, $rs, $a) => $pc()->acasa($rq, $rs, $a));
 };

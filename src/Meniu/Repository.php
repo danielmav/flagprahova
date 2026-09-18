@@ -67,6 +67,49 @@ final class Repository
         return $radacini;
     }
 
+    /**
+     * Arborele pentru situl public: doar intrări vizibile ai căror strămoși sunt
+     * toți vizibili, cu datele fișierului atașat (pentru linkuri directe).
+     * Spre deosebire de `arbore()`, copiii unui nod invizibil NU devin rădăcini.
+     */
+    public function arborePublic(int $sectiuneId): array
+    {
+        $st = $this->pdo->prepare('SELECT m.id, m.parent_id, m.ordine, m.titlu, m.slug, m.tip, m.url, m.sablon, m.vizibil, m.modificat_la,
+                f.cale AS fisier_cale, f.marime AS fisier_marime, f.mime AS fisier_mime
+            FROM meniu m LEFT JOIN fisiere f ON f.id = m.fisier_id
+            WHERE m.sectiune_id = :s ORDER BY m.ordine, m.id');
+        $st->execute(['s' => $sectiuneId]);
+        $noduri = [];
+        foreach ($st->fetchAll() as $r) {
+            $r['copii'] = [];
+            $noduri[(int) $r['id']] = $r;
+        }
+        $radacini = [];
+        foreach ($noduri as &$n) {
+            $p = $n['parent_id'] === null ? null : (int) $n['parent_id'];
+            if ($p !== null && isset($noduri[$p])) {
+                $noduri[$p]['copii'][] = &$n;
+            } else {
+                $radacini[] = &$n;
+            }
+        }
+        unset($n);
+        // Nodurile ascunse dispar cu tot subarborele: un copil vizibil al unui
+        // părinte ascuns NU trebuie să apară ca rădăcină în meniul public.
+        $curata = function (array $lista) use (&$curata): array {
+            $out = [];
+            foreach ($lista as $nod) {
+                if ((int) $nod['vizibil'] !== 1) {
+                    continue;
+                }
+                $nod['copii'] = $curata($nod['copii']);
+                $out[] = $nod;
+            }
+            return $out;
+        };
+        return $curata($radacini);
+    }
+
     public function gaseste(int $id): ?array
     {
         $st = $this->pdo->prepare('SELECT * FROM meniu WHERE id = :id LIMIT 1');

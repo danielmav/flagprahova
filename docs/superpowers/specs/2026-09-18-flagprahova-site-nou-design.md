@@ -124,7 +124,7 @@ Europeană" e HTML, nu imagine.
   `#1B1F4A`), albastru `#1F6FC5` (linkuri, meniu activ, hover — tonul din sigla FLAG), fundal secțiuni
   deschise `#E6EEF8`, gradient hero `#E9F0FA → #FFFFFF`, accent portocaliu `#EC8C16` folosit rar
   (linia de sub eyebrow, cerculețe decorative, hover pe butoane secundare), text `#2B2F4A`, text
-  estompat `#6F7390`. Fonturi: **DM Serif Display** (h1–h3) + **DM Sans** (corp), self-hosted în
+  estompat `#5C6180` (5,2:1 pe fundalul bleu `#E6EEF8` — AA). Fonturi: **DM Serif Display** (h1–h3) + **DM Sans** (corp), self-hosted în
   `assets/fonts/` (woff2, subseturile latin + latin-ext pentru diacritice).
 - Elemente preluate ca idee din template: header alb sticky (logo stânga, meniu dreapta, buton-pastilă
   = comutatorul de perioadă), titluri cu „eyebrow" în pastilă rotunjită, butoane rotunjite complet,

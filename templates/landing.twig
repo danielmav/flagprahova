@@ -1,0 +1,39 @@
+{% extends 'layout.twig' %}
+{% block title %}{{ setari.landing_titlu|default('Asociația FLAG Prahova') }}{% endblock %}
+{% block description %}{{ setari.landing_text|default('') }}{% endblock %}
+{% block jsonld %}
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "Organization", "name": "Asociația FLAG Prahova", "url": "{{ app.url }}/", "logo": "{{ app.url }}/assets/img/logo/flag-prahova.png"{% if setari.contact_telefon|default('') %}, "telephone": "{{ setari.contact_telefon }}"{% endif %}{% if setari.contact_email_public|default('') %}, "email": "{{ setari.contact_email_public }}"{% endif %}}
+</script>
+{% endblock %}
+{% block content %}
+<section class="fp-hero">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 fp-hero__text">
+                <span class="fp-eyebrow">Grup de acțiune locală pentru pescuit</span>
+                <h1 class="mt-3">{{ setari.landing_titlu|default('Asociația FLAG Prahova') }}</h1>
+                <p class="fp-lead">{{ setari.landing_text|default('') }}</p>
+            </div>
+            <div class="col-lg-6"><img class="fp-hero__ilustratie" src="{{ base }}/assets/img/ilustratie.svg" alt="" width="640" height="480"></div>
+        </div>
+    </div>
+</section>
+<section class="fp-section fp-section--soft">
+    <div class="container">
+        <span class="fp-eyebrow fp-eyebrow--soft">Alege perioada de programare</span>
+        <div class="row g-4 mt-1">
+            {% for s in sectiuni %}
+            <div class="col-md-6">
+                <a class="fp-card d-block h-100" href="{{ base }}/{{ s.slug }}/">
+                    <span class="fp-eyebrow fp-eyebrow--soft">{{ s.slug }}</span>
+                    <span class="h3 d-block mt-3">{{ s.titlu }}</span>
+                    <p class="mt-2">{{ s.subtitlu }}</p>
+                    <span class="fp-btn mt-3">Intră în secțiune</span>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

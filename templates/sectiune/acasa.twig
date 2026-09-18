@@ -1,0 +1,12 @@
+{# PROVIZORIU — task 3 rescrie pagina de start a secțiunii. #}
+{% extends 'layout.twig' %}
+{% block title %}{{ sectiune.titlu }}{% endblock %}
+{% block description %}{{ sectiune.subtitlu }}{% endblock %}
+{% block content %}
+<section class="fp-section">
+    <div class="container">
+        <h1>{{ sectiune.titlu }}</h1>
+        <div class="fp-prose">{{ sectiune.acasa_html|raw }}</div>
+    </div>
+</section>
+{% endblock %}

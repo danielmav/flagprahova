@@ -1,0 +1,21 @@
+{# Meniu recursiv: nivel 1 = bara, nivel 2 = dropdown, nivel ≥3 = submeniu lateral.
+   Nivelul 1 cu copii NU are data-bs-toggle="dropdown": deschiderea e pe hover/focus
+   din CSS, ca linkul părinte să rămână navigabil; pe touch o face site.js, care se
+   leagă de `.fp-has-sub > a` — de aceea clasa e pusă la orice nivel cu copii.
+   Chevronul îl desenează CSS-ul (`.fp-has-sub > a::after`), nu șablonul. #}
+<ul class="{{ nivel == 1 ? 'fp-nav fp-nav__lista' : (nivel == 2 ? 'dropdown-menu' : 'dropdown-menu fp-submenu') }}">
+{% for n in noduri %}
+    {% set are = n.copii|length > 0 %}
+    {% set clasa_link = nivel == 1 ? 'fp-nav__link' : 'dropdown-item' %}
+    {% set clasa_li = [nivel == 1 ? 'fp-nav__item' : null, are ? 'fp-has-sub' : null, are and nivel == 1 ? 'dropdown' : null]|filter(c => c)|join(' ') %}
+    <li{% if clasa_li %} class="{{ clasa_li }}"{% endif %}>
+        {% if n.href == '' %}
+            {# Document fără fișier atașat: text, nu link mort. #}
+            <span class="{{ clasa_link }} is-inactiv">{{ n.titlu }}</span>
+        {% else %}
+            <a class="{{ clasa_link }}{% if n.id in activ %} is-activ{% endif %}" href="{{ n.href }}"{% if n.extern %} target="_blank" rel="noopener noreferrer"{% endif %}{% if n.id in activ %} aria-current="page"{% endif %}>{{ n.titlu }}</a>
+        {% endif %}
+        {% if are %}{% include '_meniu_desktop.twig' with {'noduri': n.copii, 'nivel': nivel + 1, 'activ': activ} only %}{% endif %}
+    </li>
+{% endfor %}
+</ul>

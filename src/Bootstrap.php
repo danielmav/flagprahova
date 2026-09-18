@@ -74,7 +74,13 @@ final class Bootstrap
         ];
         self::extinde($container, $root, $env);
 
-        $app->addErrorMiddleware((bool) $settings['app']['debug'], true, true);
+        // 404/405 primesc layout-ul public (cu meniul secțiunii, când calea o numește),
+        // nu pagina albă a lui Slim. Restul erorilor rămân pe handler-ul implicit.
+        $errors   = $app->addErrorMiddleware((bool) $settings['app']['debug'], true, true);
+        $notFound = new Public\NotFoundHandler($twig, $container['context'], $app->getResponseFactory());
+        $errors->setErrorHandler(\Slim\Exception\HttpNotFoundException::class, $notFound);
+        $errors->setErrorHandler(\Slim\Exception\HttpMethodNotAllowedException::class, $notFound);
+
         (require $root . '/src/Routes.php')($app, $twig, $container);
         return $app;
     }
@@ -103,6 +109,14 @@ final class Bootstrap
         // Scope separat de 'admin': un atac pe „parolă uitată" nu trebuie să
         // blocheze login-ul normal de pe același IP, și invers.
         $container['parola_throttle'] = new Admin\LoginThrottle($container['db'], 'parola');
+        $container['context']        = new Public\Context(
+            $container['meniu'],
+            $container['fisiere'],
+            $container['setari'],
+            $container['settings']
+        );
+
+        self::functiiTwig($env, $container['settings']);
 
         if (($container['settings']['db_wp']['name'] ?? '') !== '') {
             $container['legacy'] = static function () use ($container): Migrare\Legacy {
@@ -113,5 +127,43 @@ final class Bootstrap
                 return new Migrare\Legacy($pdo, (string) $c['prefix']);
             };
         }
+    }
+
+    /**
+     * Funcțiile Twig folosite de șabloanele publice (documente, galerii).
+     * @param array<string,mixed> $settings
+     */
+    private static function functiiTwig(\Twig\Environment $env, array $settings): void
+    {
+        $base      = (string) $settings['app']['base_path'];
+        $fisiere   = (string) $settings['upload']['url'];
+        $urlPublic = (string) $settings['app']['url'];
+
+        // „1,2 MB" / „340 KB": separatorii românești, o zecimală doar la MB.
+        $env->addFunction(new \Twig\TwigFunction('marime', static function (int|string|null $b): string {
+            $b = (int) $b;
+            if ($b >= 1048576) {
+                return number_format($b / 1048576, 1, ',', '.') . ' MB';
+            }
+            if ($b >= 1024) {
+                return (string) round($b / 1024) . ' KB';
+            }
+            return $b . ' B';
+        }));
+        $env->addFunction(new \Twig\TwigFunction(
+            'ext',
+            static fn(?string $cale): string => strtolower(pathinfo((string) $cale, PATHINFO_EXTENSION))
+        ));
+        // Miniatura WebP generată la cerere (task ulterior); extensia sursei e înlocuită.
+        $env->addFunction(new \Twig\TwigFunction(
+            'mini',
+            static fn(string $cale, int $latime): string => $base . $fisiere . '/mini/' . $latime . '/'
+                . preg_replace('/\.[^.\/]+$/', '.webp', $cale)
+        ));
+        // URL absolut, pentru OG/JSON-LD/sitemap.
+        $env->addFunction(new \Twig\TwigFunction(
+            'url_public',
+            static fn(string $cale): string => $urlPublic . $cale
+        ));
     }
 }

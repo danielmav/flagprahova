@@ -1,0 +1,14 @@
+{% extends 'layout.twig' %}
+{% block title %}Pagina nu există · FLAG Prahova{% endblock %}
+{% block description %}Pagina căutată nu există sau a fost mutată.{% endblock %}
+{% block meta_robots %}noindex,nofollow{% endblock %}
+{% block content %}
+<section class="fp-section text-center">
+    <div class="container" style="max-width:640px">
+        <span class="fp-eyebrow fp-eyebrow--soft">Eroare {{ status }}</span>
+        <h1 class="mt-3">{{ status == 405 ? 'Metodă nepermisă' : 'Pagina nu există' }}</h1>
+        <p class="fp-lead">Linkul poate fi vechi sau greșit. Alege una dintre secțiuni:</p>
+        <p>{% for s in sectiuni %}<a class="fp-btn {{ loop.first ? '' : 'fp-btn--outline' }} m-1" href="{{ base }}/{{ s.slug }}/">{{ s.titlu }}</a>{% endfor %}</p>
+    </div>
+</section>
+{% endblock %}

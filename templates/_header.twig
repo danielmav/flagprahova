@@ -1,0 +1,50 @@
+{% set acasa_href = sectiune ? base ~ '/' ~ sectiune.slug ~ '/' : base ~ '/' %}
+{% set arata_sigla_2127 = sectiune is null or sectiune.slug == '2021-2027' %}
+<a class="fp-skip" href="#continut">Sari la conținut</a>
+{# Banda de finanțare: steagul UE trebuie să fie PRIMUL <img>, restul se ascund sub 576px. #}
+<div class="fp-topstrip">
+    <div class="container fp-logos">
+        <img src="{{ base }}/assets/img/logo/eu-flag.png" alt="Steagul Uniunii Europene" width="61" height="40">
+        <span>Cofinanțat de<br>Uniunea Europeană</span>
+        <img src="{{ base }}/assets/img/logo/guvernul-romaniei.png" alt="Guvernul României" width="45" height="44">
+        {% if arata_sigla_2127 %}
+            <img class="ms-auto" src="{{ base }}/assets/img/logo/2021-2027.png" alt="FLAG Prahova 2021-2027 — Susține inițiativa ta!" width="66" height="44">
+        {% endif %}
+    </div>
+</div>
+<header class="fp-header">
+    <div class="container fp-header__bara">
+        <a class="fp-header__sigla" href="{{ acasa_href }}"><img src="{{ base }}/assets/img/logo/flag-prahova.png" alt="Asociația FLAG Prahova" width="128" height="52"></a>
+        {% if sectiune %}
+            <nav class="fp-header__meniu ms-auto" aria-label="Meniu principal">
+                {% include '_meniu_desktop.twig' with {'noduri': arbore, 'nivel': 1, 'activ': activ} only %}
+            </nav>
+            <div class="fp-switch ms-auto ms-lg-3" role="group" aria-label="Perioada de programare">
+                {% for s in sectiuni %}
+                    <a class="fp-switch__opt{% if s.id == sectiune.id %} is-activ{% endif %}" href="{{ base }}/{{ s.slug }}/"{% if s.id == sectiune.id %} aria-current="page"{% endif %}>{{ s.slug }}</a>
+                {% endfor %}
+            </div>
+            <button class="fp-burger d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#fp-mobil" aria-controls="fp-mobil" aria-label="Deschide meniul">{% include '_icon.twig' with {'nume': 'meniu'} only %}</button>
+        {% else %}
+            <nav class="ms-auto d-flex flex-wrap gap-2" aria-label="Perioade de programare">
+                {% for s in sectiuni %}<a class="fp-btn fp-btn--outline" href="{{ base }}/{{ s.slug }}/">{{ s.slug }}</a>{% endfor %}
+            </nav>
+        {% endif %}
+    </div>
+</header>
+{% if sectiune %}
+<div class="offcanvas offcanvas-end fp-mobil" tabindex="-1" id="fp-mobil" aria-labelledby="fp-mobil-titlu">
+    <div class="offcanvas-header">
+        <span class="h5 mb-0" id="fp-mobil-titlu">{{ sectiune.titlu }}</span>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Închide"></button>
+    </div>
+    <div class="offcanvas-body">
+        <a class="fp-mobil__link" href="{{ acasa_href }}">Acasă</a>
+        {% include '_meniu_mobil.twig' with {'noduri': arbore, 'activ': activ} only %}
+        {% if cealalta %}
+            <p class="fp-mobil__eticheta">Cealaltă perioadă:</p>
+            <a class="fp-btn fp-btn--outline" href="{{ base }}/{{ cealalta.slug }}/">{{ cealalta.titlu }}</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

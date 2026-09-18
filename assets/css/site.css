@@ -13,7 +13,7 @@
   --fp-sky: #E9F0FA;
   --fp-accent: #EC8C16;
   --fp-text: #2B2F4A;
-  --fp-muted: #6F7390;
+  --fp-muted: #5C6180;
   --fp-radius: 18px;
   --fp-font-serif: 'DM Serif Display', Georgia, serif;
   --fp-font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -184,6 +184,11 @@ img { max-width: 100%; }
   content: "›";
   position: absolute;
   right: .6rem;
+  /* Centrat pe verticală: un titlu care se rupe în două rânduri nu lasă
+     chevronul agățat de primul rând. */
+  top: 50%;
+  transform: translateY(-50%);
+  line-height: 1;
   color: var(--fp-muted);
 }
 
@@ -213,6 +218,8 @@ img { max-width: 100%; }
   font-size: 14px;
   font-weight: 500;
   color: var(--fp-navy);
+  /* „2021-2027" nu se rupe în două rânduri (ar umfla pastila). */
+  white-space: nowrap;
 }
 
 /* Hover pe pastila bleu: fundal mai deschis, nu text albastru (ar da 4,3:1 la 14px). */
@@ -221,22 +228,71 @@ img { max-width: 100%; }
 .fp-switch a[aria-current="page"],
 .fp-switch a.activ { background: #fff; color: var(--fp-navy); box-shadow: 0 1px 4px rgba(39, 43, 92, .12); }
 
-/* Meniul mobil (offcanvas Bootstrap): totul devine listă verticală. */
-.fp-offcanvas .fp-nav { flex-direction: column; align-items: stretch; gap: 0; }
-
-.fp-offcanvas .fp-nav__link { padding: .6rem 0; border-bottom: 1px solid var(--fp-border); }
-
-.fp-offcanvas .fp-nav__link:hover,
-.fp-offcanvas .fp-nav__link.activ { border-bottom-color: var(--fp-border); }
-
-.fp-offcanvas .fp-submenu,
-.fp-offcanvas .dropdown-menu {
-  display: block;
-  position: static;
-  min-width: 0;
-  padding-left: 1rem;
-  box-shadow: none;
+/* Butonul care deschide meniul mobil (ascuns de Bootstrap peste 992px). */
+.fp-burger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--fp-border);
+  border-radius: 12px;
+  color: var(--fp-navy);
 }
+
+.fp-burger:hover,
+.fp-burger:focus-visible { background: var(--fp-blue-soft); }
+
+/* Meniul mobil (offcanvas Bootstrap): listă verticală, ramurile sunt <details>. */
+.fp-mobil { width: min(88vw, 360px); }
+
+.fp-mobil__lista { margin: 0; padding: 0; list-style: none; }
+
+.fp-mobil__lista .fp-mobil__lista { padding-left: .9rem; }
+
+.fp-mobil__link,
+.fp-mobil summary {
+  display: block;
+  padding: .6rem 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--fp-navy);
+  border-bottom: 1px solid var(--fp-border);
+}
+
+.fp-mobil__link:hover,
+.fp-mobil__link:focus-visible { color: var(--fp-blue); text-decoration: none; }
+
+.fp-mobil__link--parinte { font-weight: 400; color: var(--fp-blue); }
+
+.fp-mobil summary { cursor: pointer; list-style: none; }
+
+.fp-mobil summary::-webkit-details-marker { display: none; }
+
+.fp-mobil summary::after {
+  content: "›";
+  display: inline-block;
+  float: right;
+  color: var(--fp-muted);
+}
+
+.fp-mobil details[open] > summary::after { transform: rotate(90deg); }
+
+.fp-mobil__eticheta { margin: 1.5rem 0 .5rem; font-size: 13px; color: var(--fp-muted); }
+
+/* Marcajul activului din șabloane (`is-activ`), pe lângă `.activ` și aria-current. */
+.fp-nav__link.is-activ { color: var(--fp-blue); border-bottom-color: var(--fp-accent); }
+
+.fp-nav .dropdown-item.is-activ { color: var(--fp-blue); font-weight: 500; }
+
+.fp-switch a.is-activ { background: #fff; color: var(--fp-navy); box-shadow: 0 1px 4px rgba(39, 43, 92, .12); }
+
+.fp-mobil__link.is-activ { color: var(--fp-blue); }
+
+/* Intrare de meniu fără destinație (document fără fișier atașat): text, nu link mort. */
+.is-inactiv { color: var(--fp-muted); cursor: default; }
 
 /* --- Hero --------------------------------------------------------------- */
 .fp-hero { background: linear-gradient(180deg, var(--fp-sky), #fff); padding: 3.5rem 0; }

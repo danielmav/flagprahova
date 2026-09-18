@@ -1,0 +1,19 @@
+{# Meniu recursiv pentru offcanvas: nivelurile cu copii sunt <details> nativ
+   (fără JS), deschise când ramura e cea activă. #}
+<ul class="fp-mobil__lista">
+{% for n in noduri %}
+    <li>
+    {% if n.copii|length > 0 %}
+        <details{% if n.id in activ %} open{% endif %}>
+            <summary>{{ n.titlu }}</summary>
+            {% if n.href != '' and n.tip != 'dosar' %}<a class="fp-mobil__link fp-mobil__link--parinte" href="{{ n.href }}"{% if n.extern %} target="_blank" rel="noopener noreferrer"{% endif %}>Deschide „{{ n.titlu }}”</a>{% endif %}
+            {% include '_meniu_mobil.twig' with {'noduri': n.copii, 'activ': activ} only %}
+        </details>
+    {% elseif n.href == '' %}
+        <span class="fp-mobil__link is-inactiv">{{ n.titlu }}</span>
+    {% else %}
+        <a class="fp-mobil__link{% if n.id in activ %} is-activ{% endif %}" href="{{ n.href }}"{% if n.extern %} target="_blank" rel="noopener noreferrer"{% endif %}{% if n.id in activ %} aria-current="page"{% endif %}>{{ n.titlu }}</a>
+    {% endif %}
+    </li>
+{% endfor %}
+</ul>
