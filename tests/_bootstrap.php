@@ -40,7 +40,10 @@ function settings(): array
 }
 
 /**
- * Trimite o cerere în proces. $files = ['camp' => ['cale' => '/abs/fisier', 'nume' => 'x.pdf']].
+ * Trimite o cerere în proces.
+ * $files = ['camp' => ['cale' => '/abs/fisier', 'nume' => 'x.pdf']] pentru un singur fișier,
+ * sau ['camp' => [['cale' => ..., 'nume' => ...], ...]] pentru un câmp multiplu (`camp[]`),
+ * caz în care se construiește un array de UploadedFile, ca la un upload `multiple` real.
  */
 function cerere(string $metoda, string $cale, array $body = [], array $files = []): \Psr\Http\Message\ResponseInterface
 {
@@ -49,10 +52,14 @@ function cerere(string $metoda, string $cale, array $body = [], array $files = [
         $req = $req->withParsedBody($body)->withHeader('Content-Type', 'application/x-www-form-urlencoded');
     }
     if ($files !== []) {
+        $creaza = function (array $f) {
+            $stream = (new StreamFactory())->createStreamFromFile($f['cale']);
+            return (new UploadedFileFactory())->createUploadedFile($stream, filesize($f['cale']), $f['eroare'] ?? UPLOAD_ERR_OK, $f['nume']);
+        };
         $uf = [];
         foreach ($files as $camp => $f) {
-            $stream = (new StreamFactory())->createStreamFromFile($f['cale']);
-            $uf[$camp] = (new UploadedFileFactory())->createUploadedFile($stream, filesize($f['cale']), UPLOAD_ERR_OK, $f['nume']);
+            // Listă de fișiere (array de descrieri) => câmp multiplu; altfel, un singur fișier.
+            $uf[$camp] = isset($f['cale']) ? $creaza($f) : array_map($creaza, array_values($f));
         }
         $req = $req->withUploadedFiles($uf);
     }

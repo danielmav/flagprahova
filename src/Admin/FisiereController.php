@@ -69,27 +69,37 @@ final class FisiereController
 
     public function redenumeste(Request $request, Response $response, array $args): Response
     {
-        if ($this->csrfOk($request)) {
-            $nume = trim((string) (((array) $request->getParsedBody())['nume_afisat'] ?? ''));
-            if ($nume !== '') { $this->fisiere->redenumeste((int) $args['id'], $nume); $this->flash('ok', 'Nume actualizat.'); }
+        $inapoi = '/fisiere' . $this->queryInapoi($request);
+        if (!$this->csrfOk($request)) {
+            $this->flash('eroare', 'Sesiunea a expirat. Reîncarcă pagina.');
+            return $this->redirect($response, $inapoi);
         }
-        return $this->redirect($response, '/fisiere' . $this->queryInapoi($request));
+        $nume = trim((string) (((array) $request->getParsedBody())['nume_afisat'] ?? ''));
+        if ($nume === '') {
+            $this->flash('eroare', 'Numele nu poate fi gol.');
+            return $this->redirect($response, $inapoi);
+        }
+        $this->fisiere->redenumeste((int) $args['id'], mb_substr($nume, 0, 255));
+        $this->flash('ok', 'Nume actualizat.');
+        return $this->redirect($response, $inapoi);
     }
 
     public function sterge(Request $request, Response $response, array $args): Response
     {
         $id = (int) $args['id'];
+        $inapoi = '/fisiere' . $this->queryInapoi($request);
         if (!$this->csrfOk($request)) {
-            return $this->redirect($response, '/fisiere');
+            $this->flash('eroare', 'Sesiunea a expirat. Reîncarcă pagina.');
+            return $this->redirect($response, $inapoi);
         }
         $folosit = $this->meniu->fisierFolosit($id);
         if ($folosit !== []) {
             $this->flash('eroare', 'Fișierul nu poate fi șters: este folosit de „' . implode('”, „', array_column($folosit, 'titlu')) . '”.');
-            return $this->redirect($response, '/fisiere' . $this->queryInapoi($request));
+            return $this->redirect($response, $inapoi);
         }
         $this->fisiere->sterge($id, $this->settings['upload']['dir']);
         $this->flash('ok', 'Fișier șters.');
-        return $this->redirect($response, '/fisiere' . $this->queryInapoi($request));
+        return $this->redirect($response, $inapoi);
     }
 
     /** Upload de imagine din editorul Quill. JSON. */
