@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace App\Fisiere;
 
 use finfo;
+use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UploadedFileInterface;
 use Throwable;
+use ZipArchive;
 
 final class Upload
 {
@@ -67,10 +69,15 @@ final class Upload
         }
 
         $mime = (new finfo(FILEINFO_MIME_TYPE))->buffer($cap) ?: '';
-        // Fișierele Office (docx/xlsx/pptx) sunt zip-uri: finfo poate întoarce application/zip. Acceptăm după extensia declarată.
+        // Fișierele Office (docx/xlsx/pptx) și ODT sunt zip-uri: finfo poate întoarce application/zip.
+        // Acceptăm fallback-ul pe extensia declarată DOAR dacă structura internă a arhivei
+        // confirmă un document Office/ODT (nu orice .zip redenumit).
         $extDeclarata = strtolower(pathinfo($numeOriginal, PATHINFO_EXTENSION));
         if ($mime === 'application/zip' && in_array($extDeclarata, ['docx', 'xlsx', 'pptx', 'odt'], true)) {
-            $mime = array_search($extDeclarata, self::MIME, true) ?: $mime;
+            $mimeOffice = $this->detecteazaOffice($stream, $extDeclarata);
+            if ($mimeOffice !== null) {
+                $mime = $mimeOffice;
+            }
         }
         if (!isset(self::MIME[$mime])) {
             return $nu('tip_nepermis');
@@ -90,8 +97,60 @@ final class Upload
         try {
             $f->moveTo($dirAbs . '/' . $cand);
         } catch (Throwable) {
-            return $nu('eroare');
+            // TOCTOU: destinația a putut apărea între verificarea is_file() și moveTo().
+            // O singură reîncercare, cu sufix aleator, înainte de a renunța.
+            $cand = $nume . '-' . bin2hex(random_bytes(3)) . '.' . $ext;
+            try {
+                $f->moveTo($dirAbs . '/' . $cand);
+            } catch (Throwable) {
+                return $nu('eroare');
+            }
         }
         return ['cale' => $sub . '/' . $cand, 'nume_afisat' => $numeOriginal, 'mime' => $mime, 'marime' => $marime, 'motiv' => null];
+    }
+
+    /**
+     * Verifică dacă un flux ZIP e de fapt un document Office (docx/xlsx/pptx) sau ODT,
+     * după structura internă a arhivei — nu doar după extensia declarată de client.
+     * Întoarce MIME-ul canonic dacă structura confirmă tipul, altfel null (rămâne application/zip).
+     */
+    private function detecteazaOffice(StreamInterface $stream, string $extDeclarata): ?string
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'fpzip');
+        if ($tmp === false) {
+            return null;
+        }
+        try {
+            $stream->rewind();
+            $fh = fopen($tmp, 'wb');
+            if ($fh === false) {
+                return null;
+            }
+            while (!$stream->eof()) {
+                fwrite($fh, $stream->read(65536));
+            }
+            fclose($fh);
+            $stream->rewind();
+
+            $zip = new ZipArchive();
+            if ($zip->open($tmp) !== true) {
+                return null;
+            }
+            try {
+                $ok = match ($extDeclarata) {
+                    'docx', 'xlsx', 'pptx' => $zip->locateName('[Content_Types].xml') !== false,
+                    'odt' => $zip->locateName('mimetype') !== false
+                        && $zip->getFromName('mimetype') === 'application/vnd.oasis.opendocument.text',
+                    default => false,
+                };
+            } finally {
+                $zip->close();
+            }
+            return $ok ? (array_search($extDeclarata, self::MIME, true) ?: null) : null;
+        } catch (Throwable) {
+            return null;
+        } finally {
+            @unlink($tmp);
+        }
     }
 }

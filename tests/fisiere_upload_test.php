@@ -36,6 +36,28 @@ ok('php deghizat în pdf => tip_nepermis (MIME din conținut)', $r['motiv'] === 
 $r = $up->salveaza($uf(__DIR__ . '/fixtures/mic.png', 'poza.exe'));
 ok('png cu extensie exe => salvat ca .png', $r['motiv'] === null && str_ends_with((string) $r['cale'], '.png'));
 ok('esteImagine', App\Fisiere\Upload::esteImagine('image/png') && !App\Fisiere\Upload::esteImagine('application/pdf'));
+
+// Fallback zip => Office/ODT trebuie confirmat de structura internă a arhivei, nu doar de extensie.
+$falsDocx = tempnam(sys_get_temp_dir(), 'fpzip');
+$zf = new ZipArchive();
+$zf->open($falsDocx, ZipArchive::OVERWRITE);
+$zf->addFromString('notite.txt', 'orice zip fara structura office');
+$zf->close();
+$r = $up->salveaza($uf($falsDocx, 'fals.docx'));
+ok('zip fără structură Office redenumit .docx => salvat ca .zip', $r['motiv'] === null && $r['mime'] === 'application/zip' && str_ends_with((string) $r['cale'], '.zip'));
+unlink($falsDocx);
+
+$bunDocx = tempnam(sys_get_temp_dir(), 'fpzip');
+$zb = new ZipArchive();
+$zb->open($bunDocx, ZipArchive::OVERWRITE);
+$zb->addFromString('[Content_Types].xml', '<?xml version="1.0"?><Types xmlns="x"></Types>');
+$zb->close();
+$r = $up->salveaza($uf($bunDocx, 'bun.docx'));
+ok('docx minimal (cu [Content_Types].xml) => acceptat ca docx', $r['motiv'] === null
+    && $r['mime'] === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    && str_ends_with((string) $r['cale'], '.docx'));
+unlink($bunDocx);
+
 $r = $up->salveaza($uf(__DIR__ . '/fixtures/mic.pdf', 'x.pdf', UPLOAD_ERR_NO_FILE));
 ok('fără fișier => gol', $r['motiv'] === 'gol');
 $mic = new App\Fisiere\Upload($dir, 10);
