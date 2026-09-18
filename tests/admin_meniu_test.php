@@ -28,7 +28,7 @@ try {
 
     // link fără http => eroare
     $r = cerere('POST', '/admin/meniu/salveaza', ['_csrf' => 'abc', 'sectiune_id' => $sid, 'parent_id' => $dosar['id'], 'titlu' => 'L', 'tip' => 'link', 'url' => 'ftp://x']);
-    ok('link invalid => eroare', $r->getStatusCode() === 200 && str_contains(corp($r), 'http://'));
+    ok('link invalid => eroare', $r->getStatusCode() === 200 && str_contains(corp($r), 'Linkul trebuie să înceapă cu'));
 
     // document fără fișier => eroare; cu fișier => ok
     $r = cerere('POST', '/admin/meniu/salveaza', ['_csrf' => 'abc', 'sectiune_id' => $sid, 'parent_id' => $dosar['id'], 'titlu' => 'D', 'tip' => 'document', 'fisier_id' => '']);
@@ -46,6 +46,24 @@ try {
     $r = cerere('POST', '/admin/meniu/salveaza', ['_csrf' => 'abc', 'id' => $doc['id'], 'sectiune_id' => $sid, 'parent_id' => $dosar['id'], 'titlu' => "Comunicat $marca v2", 'tip' => 'document', 'fisier_id' => $fid, 'vizibil' => '0']);
     $doc2 = $pdo->query('SELECT * FROM meniu WHERE id = ' . (int) $doc['id'])->fetch();
     ok('editare salvează titlu + vizibil', $doc2['titlu'] === "Comunicat $marca v2" && (int) $doc2['vizibil'] === 0);
+
+    // la editare, sectiune_id din POST se ignoră (nu mutăm intrarea în altă secțiune printr-un POST fabricat)
+    $r = cerere('POST', '/admin/meniu/salveaza', ['_csrf' => 'abc', 'id' => $doc['id'], 'sectiune_id' => 999999, 'parent_id' => $dosar['id'], 'titlu' => "Comunicat $marca v2", 'tip' => 'document', 'fisier_id' => $fid, 'vizibil' => '0']);
+    ok('editare ignoră sectiune_id din POST', $r->getStatusCode() === 302
+        && (int) $pdo->query('SELECT sectiune_id FROM meniu WHERE id = ' . (int) $doc['id'])->fetchColumn() === $sid);
+
+    // părinte dintr-o altă secțiune => ignorat (altfel ar deveni rădăcină „fantomă”)
+    $sid2 = (int) $pdo->query("SELECT id FROM sectiuni WHERE slug='2014-2020'")->fetchColumn();
+    cerere('POST', '/admin/meniu/salveaza', ['_csrf' => 'abc', 'sectiune_id' => $sid2, 'parent_id' => $dosar['id'], 'titlu' => "Strain $marca", 'tip' => 'dosar', 'vizibil' => '1']);
+    $strain = $pdo->query("SELECT * FROM meniu WHERE titlu = " . $pdo->quote("Strain $marca"))->fetch();
+    ok('parent din altă secțiune => ignorat', $strain && (int) $strain['sectiune_id'] === $sid2 && $strain['parent_id'] === null);
+    if ($strain) { $pdo->exec('DELETE FROM meniu WHERE id = ' . (int) $strain['id']); }
+
+    // CSRF greșit la ștergere => nu se șterge nimic, flash de eroare
+    $r = cerere('POST', '/admin/meniu/' . $doc['id'] . '/sterge', ['_csrf' => 'gresit']);
+    ok('sterge cu CSRF greșit => intrarea rămâne', $r->getStatusCode() === 302
+        && str_contains($_SESSION['flash']['mesaj'] ?? '', 'Sesiunea a expirat')
+        && (int) $pdo->query('SELECT COUNT(*) FROM meniu WHERE id = ' . (int) $doc['id'])->fetchColumn() === 1);
 
     // arborele afișează ambele, cu data-id
     $r = cerere('GET', '/admin/meniu?sectiune=2021-2027');

@@ -28,14 +28,39 @@ document.addEventListener('click', function (ev) {
     return Array.prototype.filter.call(ol.children, function (li) { return li.classList.contains('adm-nod'); })
       .map(function (li) { return { id: parseInt(li.dataset.id, 10), copii: citeste(li.querySelector(':scope > ol')) }; });
   }
+  var inCurs = false, dinNou = false;
   function salveaza() {
+    // O singură cerere în zbor; dacă vine altă tragere între timp, retrimitem la final.
+    if (inCurs) { dinNou = true; return; }
+    inCurs = true;
     stare.textContent = 'Se salvează…';
     fetch(root.dataset.url, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF': window.CSRF },
       body: JSON.stringify({ sectiune_id: parseInt(root.dataset.sectiuneId, 10), arbore: citeste(root.querySelector(':scope > ol')) })
-    }).then(function (r) { return r.json(); }).then(function (j) {
+    }).then(function (r) {
+      if (r.status === 401 || r.status === 403 || (r.status >= 300 && r.status < 400)) {
+        stare.textContent = 'Sesiunea a expirat. Reîncarcă pagina.';
+        return null;
+      }
+      if (!r.ok) {
+        stare.textContent = 'Eroare la salvare (HTTP ' + r.status + ').';
+        return null;
+      }
+      // Un 302 către ecranul de autentificare e urmat automat de fetch și ajunge aici ca HTML.
+      if ((r.headers.get('Content-Type') || '').indexOf('application/json') === -1) {
+        stare.textContent = 'Sesiunea a expirat. Reîncarcă pagina.';
+        return null;
+      }
+      return r.json();
+    }).then(function (j) {
+      if (!j) return;
       stare.textContent = j.ok ? 'Ordinea a fost salvată.' : ('Eroare: ' + (j.eroare || 'necunoscută'));
-    }).catch(function () { stare.textContent = 'Eroare de rețea. Reîncarcă pagina.'; });
+    }).catch(function () {
+      stare.textContent = 'Eroare de rețea. Reîncarcă pagina.';
+    }).then(function () {
+      inCurs = false;
+      if (dinNou) { dinNou = false; salveaza(); }
+    });
   }
   root.querySelectorAll('ol.adm-arbore').forEach(function (ol) {
     new Sortable(ol, { group: 'meniu', handle: '.adm-nod__grip', animation: 150, fallbackOnBody: true, swapThreshold: 0.65, onEnd: salveaza });

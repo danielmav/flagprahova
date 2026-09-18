@@ -9,7 +9,7 @@
             <a class="btn btn-sm btn-outline-secondary" href="{{ base }}{{ admin_path }}/meniu/nou?sectiune={{ sectiune.slug }}&parent={{ nod.id }}">+ sub</a>
             <a class="btn btn-sm btn-outline-primary" href="{{ base }}{{ admin_path }}/meniu/{{ nod.id }}">Editează</a>
             <form class="d-inline" method="post" action="{{ base }}{{ admin_path }}/meniu/{{ nod.id }}/sterge"
-                  onsubmit="return confirm('Ștergi „{{ nod.titlu|e('js') }}”{% if nod.copii|length %} și cele {{ nod.copii|length }} intrări de sub ea{% endif %}?')">
+                  onsubmit="return confirm('Ștergi „{{ nod.titlu|e('js') }}”{% if nod.descendenti == 1 %} și intrarea de sub ea{% elseif nod.descendenti %} și cele {{ nod.descendenti }} intrări de sub ea{% endif %}?')">
                 <input type="hidden" name="_csrf" value="{{ csrf }}">
                 <button class="btn btn-sm btn-outline-danger" type="submit">Șterge</button>
             </form>

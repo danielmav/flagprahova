@@ -53,6 +53,17 @@ final class Repository
             }
         }
         unset($n);
+        // Numărul total de descendenți per nod, calculat în memorie (fără interogări în plus).
+        $numara = function (array &$noduri) use (&$numara): int {
+            $total = 0;
+            foreach ($noduri as &$nod) {
+                $nod['descendenti'] = $numara($nod['copii']);
+                $total += 1 + $nod['descendenti'];
+            }
+            unset($nod);
+            return $total;
+        };
+        $numara($radacini);
         return $radacini;
     }
 

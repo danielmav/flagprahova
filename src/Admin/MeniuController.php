@@ -86,13 +86,11 @@ final class MeniuController
     private function optiuniParinte(int $sectiuneId, ?int $exclude): array
     {
         $out = [];
-        $meniu = $this->meniu;
-        $parcurge = function (array $noduri, int $nivel) use (&$parcurge, &$out, $exclude, $meniu): void {
+        $parcurge = function (array $noduri, int $nivel) use (&$parcurge, &$out, $exclude): void {
             foreach ($noduri as $n) {
-                // `continue` sare peste tot subarborele, deci descendenții sunt excluși
-                // și structural; `esteDescendent` rămâne plasa de siguranță dacă arborele
-                // ar fi construit altfel (de ex. un părinte lipsă care rupe lanțul).
-                if ($exclude !== null && ((int) $n['id'] === $exclude || $meniu->esteDescendent($exclude, (int) $n['id']))) {
+                // `continue` sare peste tot subarborele, deci descendenții intrării
+                // editate sunt excluși odată cu ea.
+                if ($exclude !== null && (int) $n['id'] === $exclude) {
                     continue;
                 }
                 $out[] = ['id' => (int) $n['id'], 'eticheta' => str_repeat('— ', $nivel) . $n['titlu']];
@@ -107,8 +105,17 @@ final class MeniuController
     {
         $in  = (array) $request->getParsedBody();
         $id  = (int) ($in['id'] ?? 0) ?: null;
-        $sid = (int) ($in['sectiune_id'] ?? 0);
-        $sec = $this->sectiuneCurenta($request, $sid);
+        // La editare, secțiunea e cea a intrării existente — câmpul din POST se ignoră.
+        if ($id !== null) {
+            $curent = $this->meniu->gaseste($id);
+            if ($curent === null) {
+                $this->flash('eroare', 'Intrarea nu există.');
+                return $this->redirect($response, '/meniu');
+            }
+            $sec = $this->sectiuneCurenta($request, (int) $curent['sectiune_id']);
+        } else {
+            $sec = $this->sectiuneCurenta($request, (int) ($in['sectiune_id'] ?? 0));
+        }
         $date = [
             'id' => $id, 'sectiune_id' => (int) $sec['id'],
             'parent_id' => ($in['parent_id'] ?? '') === '' ? null : (int) $in['parent_id'],
@@ -121,6 +128,14 @@ final class MeniuController
             'vizibil' => (int) (($in['vizibil'] ?? '0') === '1'),
             'continut_html' => (string) ($in['continut_html'] ?? ''),
         ];
+        // Părintele trebuie să existe și să fie din aceeași secțiune; altfel intrarea
+        // ar deveni o rădăcină „fantomă”, invizibilă în arborele oricărei secțiuni.
+        if ($date['parent_id'] !== null) {
+            $p = $this->meniu->gaseste($date['parent_id']);
+            if ($p === null || (int) $p['sectiune_id'] !== (int) $sec['id']) {
+                $date['parent_id'] = null;
+            }
+        }
         if (!$this->csrfOk($request)) {
             return $this->formular($response, $date, $sec, 'Sesiunea a expirat. Trimite din nou.');
         }
@@ -154,7 +169,11 @@ final class MeniuController
     public function sterge(Request $request, Response $response, array $args): Response
     {
         $intrare = $this->meniu->gaseste((int) $args['id']);
-        if ($intrare !== null && $this->csrfOk($request)) {
+        if ($intrare === null) {
+            $this->flash('eroare', 'Intrarea nu există.');
+        } elseif (!$this->csrfOk($request)) {
+            $this->flash('eroare', 'Sesiunea a expirat. Reîncarcă pagina.');
+        } else {
             $n = $this->meniu->sterge((int) $intrare['id']);
             $this->flash('ok', "$n intrare(i) ștearsă(e).");
         }

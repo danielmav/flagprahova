@@ -26,6 +26,9 @@ try {
     ok('arbore: nodul A la nivel 1', $nodA !== null);
     ok('arbore: A → B → [C, D] (3 niveluri)', $nodA !== null && count($nodA['copii']) === 1
         && count($nodA['copii'][0]['copii']) === 2);
+    ok('arbore: A are descendenti = 3 (tot subarborele)', $nodA !== null && $nodA['descendenti'] === 3);
+    ok('arbore: B are descendenti = 2, C are 0', $nodA !== null && $nodA['copii'][0]['descendenti'] === 2
+        && $nodA['copii'][0]['copii'][0]['descendenti'] === 0);
 
     $repo->actualizeaza($c, ['titlu' => 'Măsura 1 – Rev. 6', 'slug' => 'masura-1-rev-6', 'tip' => 'link', 'url' => 'https://example.com/m1c.pdf', 'vizibil' => 0]);
     ok('actualizeaza schimbă titlul', $repo->gaseste($c)['titlu'] === 'Măsura 1 – Rev. 6');
