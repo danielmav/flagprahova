@@ -2,15 +2,26 @@
 
 Slim 4 + Twig + PDO, PHP ≥ 8.1, fără build step; Bootstrap/Quill/SortableJS vendorate în `assets/vendor/`.
 Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`. Planuri: `docs/superpowers/plans/`.
+Stadiu: Plan 1 (admin) și Plan 2 (migrare WP) mergeuite în `main` (2026-09-18). Urmează Plan 3 = sit public (spec §4, §6; galeriile-copil ale unei pagini se randează sub conținut — Cooperare se termină cu „GALERII FOTO”), Plan 4 = staging/lansare.
+Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO) sunt în `~/.claude/CLAUDE.md`.
+
+## Server / deploy
+- Hosting cPanel FĂRĂ SSH (nu se poate activa pe planul curent): deploy DOAR prin cPanel Git Version Control (`.cpanel.yml`), baza se exportă local (`mysqldump`) și se importă prin phpMyAdmin, `fisiere/` (3 GB) se urcă prin FTP/File Manager; `DB_WP_NAME` gol pe server; PHP 8.3 la lansare.
+- Date de conectare (cPanel, admin vechi) în `materiale/dateconectare.txt` (gitignored) — nu le lipi în transcript.
 
 ## Comenzi
+- Cont admin local: `admin@flagprahova.ro` / `parola-locala`. Baza locală e deja MIGRATĂ (255 intrări, 991 fișiere); `php database/verifica_migrare.php` trebuie să dea exit 0.
 - PHP CLI: `C:/laragon/bin/php/php-8.3.31-nts-Win32-vs16-x64/php.exe` (`php` din PATH e tot 8.3, dar ținem calea explicită pentru extensii).
 - MySQL: `C:/laragon/bin/mysql/mysql-8.0.30-winx64/bin/mysql.exe -u root --default-character-set=utf8mb4 flagprahova`. NU pasa diacritice pe linia de comandă.
 - Migrare/seed: `php database/migrate.php && php database/seed.php` (idempotente). Cont: `php database/create_admin.php email nume parola`.
-- Teste: `for t in tests/*_test.php; do php "$t" || echo "FAIL: $t"; done` — rulează în proces pe baza REALĂ `flagprahova`; fiecare test își șterge datele în `finally`.
-- Capturi: `node tests/capturi.mjs` → `storage/shots/`.
+- Teste: `for t in tests/*_test.php; do php "$t" || echo "FAIL: $t"; done` — rulează în proces pe baza REALĂ `flagprahova`, indiferent de conținutul ei; fiecare test își șterge/restaurează datele în `finally`. Rulează suita de DOUĂ ORI la rând ca dovadă că nu lasă urme (apoi `verifica_migrare.php`).
+- Capturi: `node tests/capturi.mjs` → `storage/shots/`. Chrome headless are lățime minimă ~500 px → captura „mobil” la 390 px iese tăiată (nu e bug CSS); paginile autentificate se capturează cu Puppeteer (nu există încă).
 
 ## Convenții
+- Fluxul de lucru: brainstorming → spec → plan (`docs/superpowers/plans/`) → execuție cu subagenți (`superpowers:subagent-driven-development`), ledger în `.superpowers/sdd/<plan>/progress.md` (gitignored). Modele: sonnet pentru task-uri mecanice, opus pentru integrare, fable doar la revizia finală.
+- `scripts/review-package` din skill pică pe `tests/fixtures/rau.php.pdf` (driver git de diff pentru PDF) → construiește diff-ul manual cu `git diff … -- . ':!tests/fixtures' ':!assets/vendor'`.
+- `fisiere.legacy_url` are collation case-insensitive → `gasesteDupaLegacy` folosește `WHERE BINARY` (există `altul.pdf` și `altul.PDF` reale).
+- `Html::curata()` permite și `tel:`; `Curata` (migrare) aplică wpautop DUPĂ `Html::curata`, pe noduri, și convertește `h4-h6 → h3`, `h1 → h2`.
 - Intrarea de meniu e unitatea de conținut (`meniu.tip`: pagina/document/dosar/link/galerie). Slug unic pe secțiune.
 - Prepared statements native: placeholdere distincte, LIMIT inline `(int)`.
 - Toate POST-urile de admin cer `_csrf` (sau header `X-CSRF` la JSON) — `Admin\Helpers::csrfOk()`.
@@ -29,6 +40,9 @@ Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`. Planur
 
 ## Migrare din WordPress
 
+- Se rulează O SINGURĂ DATĂ înainte de predare: re-rularea `migrate_wp.php` suprascrie titlurile/conținutul/vizibilitatea editate de client din admin (doar slug-ul e păstrat).
+- `Legacy::pagina($id, $preferaBuilder)` + `Harta::PAGINI_BUILDER = [277]`: pagini cu `post_content` spam dar conținut real în `_variant_page_builder_html`. Paginile 277/288/307 NU sunt goale (au builder html).
+- De validat de client: `database/data/acasa-2021-2027.html` (scris din PDF-ul SDL; abrevierea „PAP”); pagina „Măsura 1” are un link cu text stricat din sursă.
 - Sursa e baza WP veche `flagprahova_wp_old` (`DB_WP_*` în `.env`, read-only, doar pentru scripturile de migrare).
 - Ordine: `import_fisiere.php --zip=...` (atașamente → `fisiere/AAAA/LL/`, sare miniaturile WP și pluginurile) →
   `migrate_wp.php` (funcția `migreaza()`: arborele 2014-2020, meniul fix 2021-2027, galeriile Cooperare, Acasă) →
@@ -37,4 +51,4 @@ Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`. Planur
 - `Harta::SET_2021` decide ce intrări vechi trec în secțiunea 2021-2027; schimbarea ei mută automat intrările la următoarea migrare.
 - `reset_continut.php --da` rulează DOAR cu `APP_ENV=dev`: șterge galerii/meniu/fișiere și reface `setari` din `seed.php`. Fișierele de pe disc NU se șterg — `import_fisiere.php` le (re)înregistrează după reset fără să le rescrie (verifică potrivirea pe conținut, nu doar pe nume, ca să nu creeze dubluri „-2”).
 - URL-urile WP pot conține spații DUBLE (`%20%20`, ex. `2019/06/anunt prelungire  apel M1.pdf`). `Legacy::normalizeazaUrl()` face doar `trim` + `rawurldecode`, NU colapsează spațiile: altfel potrivirea cu `fisiere.legacy_url` cade și documentele (334, 423) se pierd tăcut.
-- `tests/migrare_wp_test.php` rulează pe baza REALĂ și șterge doar rândurile `legacy_id` apărute în timpul testului; se rulează fie ÎNAINTE de migrarea reală, fie DUPĂ un `reset_continut.php`.
+- `tests/migrare_wp_test.php` rulează `migreaza()` pe baza REALĂ (merge și pe baza migrată): șterge doar rândurile apărute în timpul testului și restaurează slug-ul/galeria/legacy_url-urile pe care le modifică.
