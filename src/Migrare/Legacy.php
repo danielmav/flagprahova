@@ -51,7 +51,12 @@ final class Legacy
         return $out;
     }
 
-    public function pagina(int $id): ?array
+    /**
+     * `$preferaBuilder = true` inversează ordinea implicită: ia întâi
+     * `_variant_page_builder_html` și cade pe `post_content` doar dacă e gol
+     * (pagini la care `post_content` a fost înlocuit de spam).
+     */
+    public function pagina(int $id, bool $preferaBuilder = false): ?array
     {
         $p = $this->prefix;
         $st = $this->pdo->prepare("SELECT ID, post_title, post_name, post_content FROM {$p}posts WHERE ID = :id AND post_type = 'page' LIMIT 1");
@@ -60,11 +65,21 @@ final class Legacy
         if (!$r) {
             return null;
         }
-        $continut = trim((string) $r['post_content']);
-        if ($continut === '') {
+        $builder = function () use ($p, $id): string {
             $st = $this->pdo->prepare("SELECT meta_value FROM {$p}postmeta WHERE post_id = :id AND meta_key = '_variant_page_builder_html' LIMIT 1");
             $st->execute(['id' => $id]);
-            $continut = trim((string) ($st->fetchColumn() ?: ''));
+            return trim((string) ($st->fetchColumn() ?: ''));
+        };
+        if ($preferaBuilder) {
+            $continut = $builder();
+            if ($continut === '') {
+                $continut = trim((string) $r['post_content']);
+            }
+        } else {
+            $continut = trim((string) $r['post_content']);
+            if ($continut === '') {
+                $continut = $builder();
+            }
         }
         return ['id' => (int) $r['ID'], 'titlu' => (string) $r['post_title'], 'slug' => (string) $r['post_name'], 'continut' => $continut];
     }
