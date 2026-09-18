@@ -8,6 +8,7 @@ use App\Admin\MeniuController;
 use App\Admin\MesajeController;
 use App\Admin\SetariController;
 use App\Admin\UtilizatoriController;
+use App\Public\MiniaturaController;
 use App\Public\PaginiController;
 use Slim\App;
 use Slim\Views\Twig;
@@ -64,6 +65,7 @@ return function (App $app, Twig $twig, array $container): void {
     })->add(new AuthMiddleware($container['auth'], $adminPath, $basePath));
 
     // Situl public. Ultimele, ca grupul de admin să rămână grupat deasupra.
+    $app->get('/fisiere/mini/{latime:[0-9]+}/{cale:.+}', fn($rq, $rs, $a) => (new MiniaturaController($container['miniatura']))($rq, $rs, $a));
     $pc = fn() => new PaginiController($twig, $container);
     $app->get('/', fn($rq, $rs) => $pc()->landing($rq, $rs))->setName('home');
     $app->get('/{perioada:[0-9]{4}-[0-9]{4}}',  fn($rq, $rs, $a) => $pc()->slash($rq, $rs, $a));

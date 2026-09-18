@@ -16,6 +16,21 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use App\Setari\Repository as Setari;
 
+/** Șterge recursiv un director (miniaturile din `fisiere/mini/`). */
+function stergeDirector(string $dir): void
+{
+    foreach (scandir($dir) ?: [] as $nume) {
+        if ($nume === '.' || $nume === '..') { continue; }
+        $cale = $dir . '/' . $nume;
+        if (is_dir($cale)) {
+            stergeDirector($cale);
+        } else {
+            @unlink($cale);
+        }
+    }
+    @rmdir($dir);
+}
+
 /**
  * @return array{galerie_imagini:int, meniu:int, fisiere:int, sectiuni_curatate:int, setari:int, seed_iesire:string, seed_cod:int}
  */
@@ -35,6 +50,13 @@ function reseteaza(PDO $pdo, string $root): array
     $rap['fisiere'] = (int) $pdo->query('SELECT COUNT(*) FROM fisiere')->fetchColumn();
     $pdo->exec('DELETE FROM fisiere');
     $rap['sectiuni_curatate'] = $pdo->exec('UPDATE sectiuni SET acasa_html = NULL');
+
+    // Miniaturile se regenerează la cerere (App\Fisiere\Miniatura) — nu au sens
+    // fără intrările din `fisiere` pe care tocmai le-am șters.
+    $dirMini = $root . '/fisiere/mini';
+    if (is_dir($dirMini)) {
+        stergeDirector($dirMini);
+    }
 
     $placeholders = implode(',', array_fill(0, count(Setari::CHEI), '?'));
     $st = $pdo->prepare("DELETE FROM setari WHERE cheie IN ($placeholders)");

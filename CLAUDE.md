@@ -37,6 +37,7 @@ Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO
 - „Parolă uitată” are prag fix de 1500 ms pe răspuns, indiferent dacă emailul există, ca să nu scurgă prin timing dacă un cont e înregistrat.
 - Hook-ul gitleaks are `.gitleaksignore` pentru `assets/vendor/quill/quill.min.js` (fals pozitiv, cod minificat).
 - `router.php` e gitignored (necesar doar pentru PHP built-in server local); la un clone nou, copiază-l din `pestelocal`.
+- Miniaturile galeriilor se generează la cerere în `fisiere/mini/{480|1600}/…` (`Fisiere\Miniatura`), gitignored ca tot `fisiere/`; `reset_continut.php` le șterge.
 
 ## Migrare din WordPress
 
