@@ -16,7 +16,7 @@ use App\Support\Html;
 
 /**
  * @param array{legacy:Legacy,meniu:App\Meniu\Repository,galerie:App\Meniu\GalerieRepository,fisiere:App\Fisiere\Repository,pdo:PDO,root:string} $ctx
- * @return array{creat:int,actualizat:int,sarit:string[],galerii:int,imagini_lipsa:int,linkuri_rupte:string[],externe:string[],spam:int}
+ * @return array{creat:int,actualizat:int,mutat:int,sarit:string[],galerii:int,imagini_lipsa:int,linkuri_rupte:string[],externe:string[],spam:int}
  */
 function migreaza(array $ctx, bool $verbose = true): array
 {
@@ -25,7 +25,7 @@ function migreaza(array $ctx, bool $verbose = true): array
     $galerie = $ctx['galerie'];
     $fisiere = $ctx['fisiere'];
     $pdo = $ctx['pdo'];
-    $rap = ['creat' => 0, 'actualizat' => 0, 'sarit' => [], 'galerii' => 0, 'imagini_lipsa' => 0, 'linkuri_rupte' => [], 'externe' => [], 'spam' => 0];
+    $rap = ['creat' => 0, 'actualizat' => 0, 'mutat' => 0, 'sarit' => [], 'galerii' => 0, 'imagini_lipsa' => 0, 'linkuri_rupte' => [], 'externe' => [], 'spam' => 0];
     $sect = [];
     foreach ($meniu->sectiuni() as $s) {
         $sect[$s['slug']] = (int) $s['id'];
@@ -39,18 +39,37 @@ function migreaza(array $ctx, bool $verbose = true): array
         $copii[$it['parent']][] = $it;
     }
 
-    $upsert = function (int $legacyId, array $date) use ($meniu, &$rap): int {
+    $upsert = function (int $legacyId, array $date) use ($meniu, $pdo, &$rap): int {
         $ex = $meniu->gasesteDupaLegacy($legacyId);
         if ($ex !== null) {
-            // Slug-ul nu se trimite la actualizare: `actualizeaza()` îl re-derivă
-            // din titlu, deterministic, deci URL-urile publice rămân stabile.
-            unset($date['slug']);
-            $meniu->actualizeaza((int) $ex['id'], $date);
+            $id = (int) $ex['id'];
+            // `actualizeaza()` ignoră `sectiune_id` (nu e în COLOANE). Dacă intrarea
+            // trebuie mutată în altă secțiune (ex. `SET_2021` s-a schimbat), o facem
+            // aici, altfel `reordoneaza()` ar arunca „nu aparține secțiunii”.
+            // `parent_id` se golește: părintele vechi e în cealaltă secțiune, iar
+            // apelul curent îl setează oricum imediat după.
+            if (isset($date['sectiune_id']) && (int) $ex['sectiune_id'] !== (int) $date['sectiune_id']) {
+                $pdo->prepare('UPDATE meniu SET sectiune_id = :s, parent_id = NULL WHERE id = :id')
+                    ->execute(['s' => (int) $date['sectiune_id'], 'id' => $id]);
+                $rap['mutat']++;
+            }
+            // Slug-ul rămâne exact cel din baza nouă: `actualizeaza()` l-ar re-deriva
+            // din titlu și ar șterge o editare manuală făcută din admin.
+            $date['slug'] = (string) $ex['slug'];
+            $meniu->actualizeaza($id, $date);
             $rap['actualizat']++;
-            return (int) $ex['id'];
+            return $id;
         }
         $rap['creat']++;
         return $meniu->creeaza($date + ['legacy_id' => $legacyId, 'slug' => '']);
+    };
+
+    // Hostul unei intrări de meniu `link` (nu trece prin `Curata`, deci nu apare
+    // altfel în raport, deși e tot un domeniu extern spre care trimite situl).
+    $adaugaExtern = function (?string $url) use (&$rap): void {
+        if ($url !== null && preg_match('#^https?://([^/]+)#i', $url, $m) && !in_array(strtolower($m[1]), $rap['externe'], true)) {
+            $rap['externe'][] = strtolower($m[1]);
+        }
     };
 
     $paginaHtml = function (int $paginaId) use ($legacy, $curata, &$rap): array {
@@ -64,7 +83,8 @@ function migreaza(array $ctx, bool $verbose = true): array
 
     $adaugaGalerii = function (int $parintePaginaId, int $paginaId, array $galerii, int $sid) use ($upsert, $galerie, $legacy, $fisiere, &$rap): void {
         foreach (array_values($galerii) as $i => $g) {
-            $gid = $upsert(800000 + $paginaId * 100 + $i, ['sectiune_id' => $sid, 'parent_id' => $parintePaginaId, 'titlu' => $g['titlu'], 'tip' => 'galerie', 'vizibil' => 1]);
+            $gid = $upsert(800000 + $paginaId * 100 + $i, ['sectiune_id' => $sid, 'parent_id' => $parintePaginaId, 'titlu' => $g['titlu'], 'tip' => 'galerie',
+                                                          'fisier_id' => null, 'continut_html' => '', 'url' => '', 'vizibil' => 1, 'sablon' => 'standard']);
             $cai = $legacy->atasamenteCai($g['ids']);
             $set = [];
             foreach ($g['ids'] as $aid) {
@@ -84,7 +104,7 @@ function migreaza(array $ctx, bool $verbose = true): array
     $sid20 = $sect['2014-2020'];
     $arbore20 = [];
     $root = (string) $ctx['root'];
-    $parcurge = function (array $lista, ?int $parintNou, array &$arboreNod) use (&$parcurge, $copii, $legacy, $fisiere, $meniu, $root, $existaFisier, $upsert, $paginaHtml, $adaugaGalerii, $sid20, &$rap): void {
+    $parcurge = function (array $lista, ?int $parintNou, array &$arboreNod) use (&$parcurge, $copii, $legacy, $fisiere, $meniu, $root, $existaFisier, $upsert, $paginaHtml, $adaugaGalerii, $adaugaExtern, $sid20, &$rap): void {
         foreach ($lista as $it) {
             if (in_array($it['id'], Harta::SET_2021, true)) {
                 continue;
@@ -99,7 +119,12 @@ function migreaza(array $ctx, bool $verbose = true): array
                 $rap['sarit'][] = "{$it['id']} „{$it['titlu']}”: {$cls['motiv']}";
                 continue;
             }
-            $date = ['sectiune_id' => $sid20, 'parent_id' => $parintNou, 'titlu' => $it['titlu'], 'tip' => $cls['tip'], 'url' => $cls['url'] ?? '', 'vizibil' => 1, 'sablon' => 'standard'];
+            // Toate coloanele „de conținut” se trimit explicit, inclusiv goale: dacă
+            // o intrare își schimbă tipul între două rulări (document → dosar),
+            // rândul trebuie curățat, nu lăsat cu resturi de la tipul vechi.
+            $date = ['sectiune_id' => $sid20, 'parent_id' => $parintNou, 'titlu' => $it['titlu'], 'tip' => $cls['tip'],
+                     'fisier_id' => null, 'continut_html' => '', 'url' => $cls['url'] ?? '', 'vizibil' => 1, 'sablon' => 'standard'];
+            $adaugaExtern($cls['url']);
             $galerii = [];
             if ($cls['tip'] === 'document') {
                 $date['fisier_id'] = (int) $fisiere->gasesteDupaLegacy($cls['cale'])['id'];
@@ -141,9 +166,14 @@ function migreaza(array $ctx, bool $verbose = true): array
     // --- 2021-2027 ---
     $sid21 = $sect['2021-2027'];
     $arbore21 = [];
-    $utileHtml = $paginaHtml(252)['html'];
+    $utile = $paginaHtml(252);
+    $utileHtml = $utile['html'];
+    if ($utile['galerii'] !== []) {
+        $rap['sarit'][] = '252 „Utile”: ' . count($utile['galerii']) . ' galerii ignorate (pagina 2021-2027 nu primește galerii)';
+    }
     foreach (Harta::MENIU_2021 as $def) {
-        $date = ['sectiune_id' => $sid21, 'parent_id' => null, 'titlu' => $def['titlu'], 'tip' => $def['tip'], 'vizibil' => 1, 'sablon' => $def['sablon'] ?? 'standard'];
+        $date = ['sectiune_id' => $sid21, 'parent_id' => null, 'titlu' => $def['titlu'], 'tip' => $def['tip'],
+                 'fisier_id' => null, 'continut_html' => '', 'url' => '', 'vizibil' => 1, 'sablon' => $def['sablon'] ?? 'standard'];
         if ($def['legacy'] === Harta::UTILE_2021) {
             $date['continut_html'] = $utileHtml;
         }
@@ -153,7 +183,8 @@ function migreaza(array $ctx, bool $verbose = true): array
         $id = $upsert($def['legacy'], $date);
         $nod = ['id' => $id, 'copii' => []];
         foreach ($def['copii'] ?? [] as $c) {
-            $nod['copii'][] = ['id' => $upsert($c['legacy'], ['sectiune_id' => $sid21, 'parent_id' => $id, 'titlu' => $c['titlu'], 'tip' => $c['tip'], 'vizibil' => 1]), 'copii' => []];
+            $nod['copii'][] = ['id' => $upsert($c['legacy'], ['sectiune_id' => $sid21, 'parent_id' => $id, 'titlu' => $c['titlu'], 'tip' => $c['tip'],
+                                                             'fisier_id' => null, 'continut_html' => '', 'url' => '', 'vizibil' => 1, 'sablon' => 'standard']), 'copii' => []];
         }
         if ($def['legacy'] === Harta::NOUTATI_2021 || $def['legacy'] === Harta::STRATEGIE_2021) {
             $tinta = $def['legacy'] === Harta::NOUTATI_2021 ? 250 : 204;
@@ -167,7 +198,9 @@ function migreaza(array $ctx, bool $verbose = true): array
                     continue;
                 }
                 $fid = $cls['tip'] === 'document' ? (int) $fisiere->gasesteDupaLegacy($cls['cale'])['id'] : null;
-                $nod['copii'][] = ['id' => $upsert($it['id'], ['sectiune_id' => $sid21, 'parent_id' => $id, 'titlu' => $it['titlu'], 'tip' => $cls['tip'], 'fisier_id' => $fid, 'url' => $cls['url'] ?? '', 'vizibil' => 1]), 'copii' => []];
+                $adaugaExtern($cls['url']);
+                $nod['copii'][] = ['id' => $upsert($it['id'], ['sectiune_id' => $sid21, 'parent_id' => $id, 'titlu' => $it['titlu'], 'tip' => $cls['tip'],
+                                                              'fisier_id' => $fid, 'continut_html' => '', 'url' => $cls['url'] ?? '', 'vizibil' => 1, 'sablon' => 'standard']), 'copii' => []];
             }
         }
         $arbore21[] = $nod;
@@ -175,16 +208,20 @@ function migreaza(array $ctx, bool $verbose = true): array
     $meniu->reordoneaza($sid21, $arbore21);
 
     // --- Acasă ---
+    $acasa = $paginaHtml(75);
+    if ($acasa['galerii'] !== []) {
+        $rap['sarit'][] = '75 „Acasă”: ' . count($acasa['galerii']) . ' galerii ignorate (textul Acasă nu e intrare de meniu, deci nu poate avea galerii copil)';
+    }
     $st = $pdo->prepare('UPDATE sectiuni SET acasa_html = :h WHERE slug = :s');
-    $st->execute(['h' => $paginaHtml(75)['html'], 's' => '2014-2020']);
+    $st->execute(['h' => $acasa['html'], 's' => '2014-2020']);
     $st->execute(['h' => Html::curata((string) file_get_contents($ctx['root'] . '/database/data/acasa-2021-2027.html')), 's' => '2021-2027']);
 
     $rap['linkuri_rupte'] = array_values(array_unique($rap['linkuri_rupte']));
 
     if ($verbose) {
         printf(
-            "creat %d, actualizat %d, galerii %d, imagini lipsa %d, spam eliminat %d, sarite %d, linkuri rupte %d, externe: %s\n",
-            $rap['creat'], $rap['actualizat'], $rap['galerii'], $rap['imagini_lipsa'], $rap['spam'], count($rap['sarit']), count($rap['linkuri_rupte']), implode(', ', $rap['externe'])
+            "creat %d, actualizat %d, mutat %d, galerii %d, imagini lipsa %d, spam eliminat %d, sarite %d, linkuri rupte %d, externe: %s\n",
+            $rap['creat'], $rap['actualizat'], $rap['mutat'], $rap['galerii'], $rap['imagini_lipsa'], $rap['spam'], count($rap['sarit']), count($rap['linkuri_rupte']), implode(', ', $rap['externe'])
         );
         foreach ($rap['sarit'] as $s) {
             echo "  - sarit: $s\n";

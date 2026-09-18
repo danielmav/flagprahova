@@ -4,14 +4,13 @@ declare(strict_types=1);
 /**
  * Test end-to-end pentru `migreaza()`, pe baza WordPress REALĂ.
  *
- * ATENȚIE: în `finally` face `DELETE FROM meniu WHERE legacy_id IS NOT NULL`,
- * deci șterge și rândurile unei migrări reale rulate anterior. Rulează-l
- * ÎNAINTE de migrarea reală (sau după `reset_continut.php`). Intrările de meniu
- * create manual (fără `legacy_id`) nu sunt atinse.
+ * Curățenia din `finally` e „chirurgicală”: se face un instantaneu al id-urilor
+ * din `meniu` ÎNAINTE de migrare și se șterg doar id-urile apărute între timp,
+ * în ordine descrescătoare (copiii sunt mereu creați după părinți). Intrările
+ * manuale, ca și rândurile unei migrări reale anterioare, rămân neatinse.
  *
  * Fișierele reale sunt deja importate în tabela `fisiere`; testul înregistrează
- * rânduri FALSE doar pentru căile care LIPSESC și șterge în `finally` doar ce a
- * creat el.
+ * rânduri FALSE doar pentru căile care LIPSESC și șterge doar ce a creat el.
  */
 
 require __DIR__ . '/_bootstrap.php';
@@ -26,7 +25,9 @@ $db = new App\Database($s['db']);
 $ctx = ['legacy' => new Legacy($wp), 'meniu' => new App\Meniu\Repository($db), 'galerie' => new App\Meniu\GalerieRepository($db), 'fisiere' => new App\Fisiere\Repository($db), 'pdo' => $pdo, 'root' => dirname(__DIR__)];
 
 $acasaVechi = $pdo->query('SELECT slug, acasa_html FROM sectiuni')->fetchAll(PDO::FETCH_KEY_PAIR);
+$meniuVechi = array_flip(array_map('intval', $pdo->query('SELECT id FROM meniu')->fetchAll(PDO::FETCH_COLUMN)));
 $fisiereTest = [];
+$legacyUrlVechi = []; // id => legacy_url, pentru rândurile reale pe care testul le strică temporar
 // Fișiere false pentru căile referite de meniu și de galerii care nu au corespondent real;
 // cu arhiva importată, lista e aproape goală.
 $cai = [];
@@ -72,14 +73,45 @@ try {
     $cons = $m->gasesteDupaLegacy(280);
     ok('280 Consultare publică => pagina din builder html (nu din post_content-ul spam)', $cons && $cons['tip'] === 'pagina' && str_contains($cons['continut_html'], 'Consultare publică') && !str_contains($cons['continut_html'], 'podcasts'));
     ok('spam eliminat > 0', $r['spam'] > 0);
+    // Meniul vechi nu are nicio intrare clasificată `link` (toate URL-urile externe
+    // erau spam, deja eliminat), deci lista de hosturi externe rămâne goală.
+    ok('niciun link extern în meniul vechi => externe gol', (int) $pdo->query("SELECT COUNT(*) FROM meniu WHERE tip='link' AND legacy_id IS NOT NULL")->fetchColumn() === 0 && $r['externe'] === []);
     ok('acasa_html 2014-2020 setat', str_contains((string) $pdo->query("SELECT acasa_html FROM sectiuni WHERE id=$sid20")->fetchColumn(), 'contractului de finanțare'));
     ok('acasa_html 2021-2027 setat', strlen((string) $pdo->query("SELECT acasa_html FROM sectiuni WHERE id=$sid21")->fetchColumn()) > 200);
+
     // idempotență
     $r2 = migreaza($ctx, false);
     ok('re-rulare: 0 creat, nimic duplicat', $r2['creat'] === 0 && (int) $pdo->query("SELECT COUNT(*) FROM meniu WHERE legacy_id IS NOT NULL")->fetchColumn() === $n20 + $n21);
     ok('re-rulare: slug-ul nu se schimbă', $m->gasesteDupaLegacy(579)['slug'] === $org['slug']);
+
+    // Slug editat manual din admin: migrarea nu îl resetează.
+    $pdo->prepare('UPDATE meniu SET slug = :sl WHERE id = :id')->execute(['sl' => 'organigrama-editata-manual', 'id' => (int) $org['id']]);
+    migreaza($ctx, false);
+    ok('re-rulare: slug-ul editat manual rămâne', $m->gasesteDupaLegacy(579)['slug'] === 'organigrama-editata-manual');
+
+    // Intrare mutată înapoi (manual sau prin schimbarea `SET_2021`): migrarea o readuce.
+    $pdo->prepare('UPDATE meniu SET sectiune_id = :s, parent_id = NULL WHERE legacy_id = 3622')->execute(['s' => $sid20]);
+    $r4 = migreaza($ctx, false);
+    $nou4 = $m->gasesteDupaLegacy(3622);
+    ok('intrare mutată înapoi => revine în 2021-2027, fără excepție', (int) $nou4['sectiune_id'] === $sid21 && (int) $nou4['parent_id'] === (int) $m->gasesteDupaLegacy(9001)['id'] && $r4['mutat'] >= 1);
+
+    // Atașament de galerie fără fișier => `imagini_lipsa`.
+    $primaImagine = $ctx['galerie']->imagini((int) $gal[0]['id'])[0];
+    $fid = (int) $primaImagine['fisier_id'];
+    $legacyUrlVechi[$fid] = (string) $ctx['fisiere']->gaseste($fid)['legacy_url'];
+    $pdo->prepare('UPDATE fisiere SET legacy_url = :l WHERE id = :id')->execute(['l' => $legacyUrlVechi[$fid] . '.lipsa-test', 'id' => $fid]);
+    $r5 = migreaza($ctx, false);
+    ok('atașament fără fișier => imagini_lipsa = 1', $r5['imagini_lipsa'] === 1 && count($ctx['galerie']->imagini((int) $gal[0]['id'])) === 39);
 } finally {
-    $pdo->exec('DELETE FROM meniu WHERE legacy_id IS NOT NULL');
+    foreach ($legacyUrlVechi as $id => $l) {
+        $pdo->prepare('UPDATE fisiere SET legacy_url = :l WHERE id = :id')->execute(['l' => $l, 'id' => $id]);
+    }
+    // Doar id-urile apărute după instantaneu, de la cel mai nou spre cel mai vechi
+    // (copiii sunt creați după părinți, deci nu rămân orfani).
+    $st = $pdo->prepare('DELETE FROM meniu WHERE id = :id');
+    foreach (array_map('intval', $pdo->query('SELECT id FROM meniu ORDER BY id DESC')->fetchAll(PDO::FETCH_COLUMN)) as $id) {
+        if (!isset($meniuVechi[$id])) { $st->execute(['id' => $id]); }
+    }
     foreach ($fisiereTest as $id) { $pdo->exec("DELETE FROM fisiere WHERE id = $id"); }
     $st = $pdo->prepare('UPDATE sectiuni SET acasa_html = :h WHERE slug = :s');
     foreach ($acasaVechi as $slug => $h) { $st->execute(['h' => $h, 's' => $slug]); }
