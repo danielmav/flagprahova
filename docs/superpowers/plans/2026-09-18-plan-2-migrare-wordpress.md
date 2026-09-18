@@ -745,6 +745,8 @@ final class Harta
     public const SET_2021 = [3622, 3615, 3617, 3604, 3607, 3609, 3611, 3613, 3620];
     public const PAGINI_SARITE = [75];
     public const LEGACY_CONTACT_VECHI = 175; // intrarea de meniu a paginii 156
+    /** Pagini la care `post_content` e doar spam, dar `_variant_page_builder_html` are conținutul real. */
+    public const PAGINI_BUILDER = [277];
     public const NOUTATI_2021 = 9001;
     public const STRATEGIE_2021 = 9002;
     public const UTILE_2021 = 9008;
@@ -861,7 +863,8 @@ try {
     $nou = $m->gasesteDupaLegacy(3622);
     ok('3622 mutat în 2021-2027 sub Noutăți (9001)', $nou && (int) $nou['sectiune_id'] === $sid21 && (int) $nou['parent_id'] === (int) $m->gasesteDupaLegacy(9001)['id']);
     ok('3601 DIGICO rămâne în 2014-2020 sub Noutăți (250)', (int) $m->gasesteDupaLegacy(3601)['sectiune_id'] === $sid20);
-    ok('277 Consultare publică (doar spam) => sărită', $m->gasesteDupaLegacy(280) === null && count(array_filter($r['sarit'], fn($x) => str_contains($x, '280'))) === 1);
+    $cons = $m->gasesteDupaLegacy(280);
+    ok('280 Consultare publică => pagina din builder html (nu din post_content-ul spam)', $cons && $cons['tip'] === 'pagina' && str_contains($cons['continut_html'], 'Consultare publică') && !str_contains($cons['continut_html'], 'podcasts'));
     ok('spam eliminat > 0', $r['spam'] > 0);
     ok('acasa_html 2014-2020 setat', str_contains((string) $pdo->query("SELECT acasa_html FROM sectiuni WHERE id=$sid20")->fetchColumn(), 'contractului de finanțare'));
     ok('acasa_html 2021-2027 setat', strlen((string) $pdo->query("SELECT acasa_html FROM sectiuni WHERE id=$sid21")->fetchColumn()) > 200);
@@ -918,7 +921,7 @@ function migreaza(array $ctx, bool $verbose = true): array
     };
 
     $paginaHtml = function (int $paginaId) use ($legacy, $curata, &$rap): array {
-        $p = $legacy->pagina($paginaId);
+        $p = $legacy->pagina($paginaId, in_array($paginaId, Harta::PAGINI_BUILDER, true));
         $r = $curata->proceseaza((string) ($p['continut'] ?? ''));
         $rap['linkuri_rupte'] = array_merge($rap['linkuri_rupte'], $r['linkuri_rupte']);
         $rap['externe'] = array_unique(array_merge($rap['externe'], $r['externe']));
@@ -949,7 +952,7 @@ function migreaza(array $ctx, bool $verbose = true): array
         foreach ($lista as $it) {
             if (in_array($it['id'], Harta::SET_2021, true)) { continue; }
             if ($it['tip'] === 'post_type' && in_array($it['obiect_id'], Harta::PAGINI_SARITE, true)) { continue; }
-            $pag = $it['tip'] === 'post_type' ? $legacy->pagina($it['obiect_id']) : null;
+            $pag = $it['tip'] === 'post_type' ? $legacy->pagina($it['obiect_id'], in_array($it['obiect_id'], Harta::PAGINI_BUILDER, true)) : null;
             $areCopii = !empty($copii[$it['id']]);
             $cls = Harta::clasifica($it, $pag, $areCopii, $existaFisier);
             if ($cls['tip'] === 'sari') { $rap['sarit'][] = "{$it['id']} „{$it['titlu']}”: {$cls['motiv']}"; continue; }
@@ -1037,7 +1040,7 @@ if (PHP_SAPI === 'cli' && isset($argv[0]) && realpath($argv[0]) === __FILE__) {
 }
 ```
 
-Adaugă în `Meniu\Repository`:
+Modifică `Legacy::pagina(int $id, bool $preferaBuilder = false): ?array` — cu `$preferaBuilder = true` întoarce `_variant_page_builder_html` dacă e nevid, altfel `post_content` (inversul implicitului). Adaugă în `Meniu\Repository`:
 
 ```php
     public function gasesteDupaLegacy(int $legacyId): ?array
