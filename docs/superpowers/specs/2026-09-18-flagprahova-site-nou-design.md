@@ -114,16 +114,38 @@ Fără statistici, SEO, roluri, revizii.
 
 ## 6. Frontend
 
-- Paletă: alb, albastru primar `#0B4F9C`, albastru închis `#083A72` (hover/footer), fundal deschis
-  `#E8F1FB`, accent apă `#2E8BC0`, text `#1B2430`. Font Google Manrope (self-hosted în `assets/fonts/`).
-- Header: sigla FLAG Prahova + logo-urile obligatorii de finanțare (UE, Guvern, program; fișierele vin de
-  la client sau se preiau din tema veche), comutator de perioadă (două pastile), meniu Bootstrap cu
-  dropdown pe nivelul 1 și submeniuri pe nivelurile 2–3 (CSS propriu, deschidere pe hover/click);
-  pe mobil offcanvas cu acordeon.
-- Hero pe acasă de secțiune: fotografie (pești/lacuri Prahova, licență liberă, creditată în footer)
-  + val SVG. Landing: fundal foto, două carduri albe cu umbră.
-- Pagini: coloană de conținut (max 900px) + bloc lateral „Contact rapid". Documentele afișate ca rânduri cu iconiță după extensie + mărime.
-- Footer: adresă/contact, logo-uri, disclaimer UE, link la cealaltă perioadă, „© Asociația FLAG Prahova".
+Direcție vizuală (decizie 2026-09-18, revizuită): ne **inspirăm** din template-ul cumpărat
+`materiale/template1` (Be Theme, demo „Insurance 3") — culorile și layout-ul — fără să-l copiem
+(nu preluăm CSS-ul, JS-ul sau imaginile lui). Logo-urile separate sunt în `materiale/` (`eu-flag.png`,
+`guvernul-romaniei.png`, `logo-flag-prahova.png`, `2021-2027.png`); textul „Cofinanțat de Uniunea
+Europeană" e HTML, nu imagine.
+
+- Paletă (din template, adaptată la „alb cu albastru"): bleumarin `#272B5C` (titluri, butoane, footer
+  `#1B1F4A`), albastru `#1F6FC5` (linkuri, meniu activ, hover — tonul din sigla FLAG), fundal secțiuni
+  deschise `#E6EEF8`, gradient hero `#E9F0FA → #FFFFFF`, accent portocaliu `#EC8C16` folosit rar
+  (linia de sub eyebrow, cerculețe decorative, hover pe butoane secundare), text `#2B2F4A`, text
+  estompat `#6F7390`. Fonturi: **DM Serif Display** (h1–h3) + **DM Sans** (corp), self-hosted în
+  `assets/fonts/` (woff2, subseturile latin + latin-ext pentru diacritice).
+- Elemente preluate ca idee din template: header alb sticky (logo stânga, meniu dreapta, buton-pastilă
+  = comutatorul de perioadă), titluri cu „eyebrow" în pastilă rotunjită, butoane rotunjite complet,
+  hero pe gradient deschis cu ilustrație flat în dreapta, rând de 4 carduri cu iconiță, secțiune pe
+  fundal bleu cu text + imagine decalată, carduri „Noutăți" pe 3 coloane, bandă de contact (CTA) pe
+  gradient, footer bleumarin cu coloane și bară de copyright.
+- Ilustrație: SVG propriu, stil flat (cerc mare deschis, dealuri, apă în valuri, pești stilizați în
+  bleumarin/albastru/portocaliu) — înlocuiește fotografia; fără dependență de surse externe.
+- Header: bandă subțire cu logo-urile de finanțare (steag UE + „Cofinanțat de Uniunea Europeană",
+  Guvernul României, sigla 2021-2027 doar în secțiunea 2021-2027), apoi bara principală: sigla FLAG
+  Prahova, meniu Bootstrap cu dropdown pe nivelul 1 și submeniuri pe nivelurile 2–3 (CSS propriu,
+  hover/focus pe desktop), comutator de perioadă; pe mobil offcanvas cu acordeon (`<details>`).
+- Acasă de secțiune: hero (titlu, subtitlu, două butoane: Noutăți, Contact) + ilustrație; secțiunea
+  bleu cu `acasa_html`; „Noutăți" = primele 3 intrări vizibile din dosarul Noutăți; grilă cu intrările
+  de nivel 1; bandă contact. Landing: hero + două carduri (perioade) + logo-uri + footer.
+- Pagini: coloană de conținut (max 900px) + bloc lateral cu ramura de meniu curentă și „Contact rapid"
+  (adresă/telefon/email din setări). Documentele ca rânduri cu iconiță după extensie + mărime.
+  Galeriile: grilă de miniaturi WebP generate la cerere (`/fisiere/mini/{lățime}/…`) + lightbox propriu;
+  galeriile-copil ale unei pagini se randează sub conținut ca acordeon.
+- Footer: coloane (despre, meniul secțiunii, contact), rând de logo-uri, disclaimer UE (`footer_text`),
+  link la cealaltă perioadă, „© Asociația FLAG Prahova".
 - Server-rendered; JS doar pentru meniu mobil, lightbox și formular.
 
 ## 7. Migrare din WordPress
