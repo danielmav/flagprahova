@@ -10,6 +10,7 @@ use App\Admin\SetariController;
 use App\Admin\UtilizatoriController;
 use App\Public\MiniaturaController;
 use App\Public\PaginiController;
+use App\Public\SeoController;
 use Slim\App;
 use Slim\Views\Twig;
 
@@ -66,6 +67,9 @@ return function (App $app, Twig $twig, array $container): void {
 
     // Situl public. Ultimele, ca grupul de admin să rămână grupat deasupra.
     $app->get('/fisiere/mini/{latime:[0-9]+}/{cale:.+}', fn($rq, $rs, $a) => (new MiniaturaController($container['miniatura']))($rq, $rs, $a));
+    $seo = fn() => new SeoController($twig, $container);
+    $app->get('/sitemap.xml', fn($rq, $rs) => $seo()->sitemap($rq, $rs));
+    $app->get('/robots.txt', fn($rq, $rs) => $seo()->robots($rq, $rs));
     $pc = fn() => new PaginiController($twig, $container);
     $app->get('/', fn($rq, $rs) => $pc()->landing($rq, $rs))->setName('home');
     $app->get('/{perioada:[0-9]{4}-[0-9]{4}}',  fn($rq, $rs, $a) => $pc()->slash($rq, $rs, $a));

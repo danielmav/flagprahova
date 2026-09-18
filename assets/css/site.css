@@ -110,7 +110,10 @@ img { max-width: 100%; }
   display: flex;
   align-items: center;
   gap: 1.25rem;
-  padding: .75rem 0;
+  /* `padding-block`, nu `padding: .75rem 0`: scurtătura ar anula și padding-ul
+     orizontal al lui `.container`, iar meniul/comutatorul ar atinge marginea
+     ecranului pe mobil. */
+  padding-block: .75rem;
 }
 
 .fp-header__sigla img { height: 52px; width: auto; }
@@ -210,6 +213,15 @@ img { max-width: 100%; }
 
 /* Deschidere pe hover/focus la desktop; .fp-open o pune site.js la touch. */
 @media (min-width: 992px) {
+  /* „Noutăți" are ~25 de intrări și lista trece sub marginea ecranului. O facem
+     derulabilă, dar NUMAI când nu conține submeniuri: `overflow-y` ar tăia un
+     `.fp-submenu` care se deschide lateral (`left: 100%`). */
+  .fp-nav .dropdown-menu:not(:has(.fp-has-sub)) {
+    max-height: min(70vh, 30rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
   .fp-nav .dropdown:hover > .dropdown-menu,
   .fp-nav .dropdown:focus-within > .dropdown-menu,
   .fp-nav .dropdown.fp-open > .dropdown-menu { display: block; }
@@ -332,6 +344,9 @@ img { max-width: 100%; }
 .fp-hero__ilustratie {
   display: block;
   width: 100%;
+  /* `height: auto`: fără ea, browserul folosește atributul `height="480"` din
+     HTML și ilustrația iese întinsă (280×480 pe mobil). */
+  height: auto;
   max-width: 520px;
   margin-inline: auto;
 }
@@ -651,7 +666,9 @@ img { max-width: 100%; }
 }
 
 /* --- Conținutul din editor ---------------------------------------------- */
-.fp-prose { max-width: 900px; }
+/* `overflow-wrap`: conținutul migrat din WP are cuvinte/URL-uri lungi care, pe
+   mobil, ies din coloană și dau scroll orizontal. */
+.fp-prose { max-width: 900px; overflow-wrap: break-word; }
 
 .fp-prose h2 { margin: 2rem 0 .75rem; font-size: 1.6rem; }
 
@@ -716,7 +733,9 @@ img { max-width: 100%; }
 .fp-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
 /* --- Pagina interioară --------------------------------------------------- */
-.fp-pagina { padding: 2.5rem 0 4rem; }
+/* `padding-block`: vezi nota de la `.fp-header__bara` — scurtătura cu `0` pe
+   orizontală ar lăsa textul lipit de marginea ecranului pe mobil. */
+.fp-pagina { padding-block: 2.5rem 4rem; }
 
 /* --- Lista de intrări a unui dosar -------------------------------------- */
 .fp-lista__grup { margin-top: 2rem; }
@@ -774,6 +793,12 @@ img { max-width: 100%; }
   /* Meniul de desktop e înlocuit de offcanvas. */
   .fp-header__meniu { display: none; }
 
+  /* `g-5` pune un gutter orizontal de 3rem, adică margini negative de 1.5rem
+     pe rând — mai mari decât padding-ul containerului (0.75rem), deci pagina
+     capătă scroll orizontal. Sub 992px coloanele sunt stivuite, așa că gutterul
+     orizontal nu se vede: îl aducem la 1.5rem (gutterul vertical rămâne). */
+  .container > .row { --bs-gutter-x: 1.5rem; }
+
   .fp-hero { padding: 2.5rem 0; text-align: center; }
 
   .fp-hero__text p { margin-inline: auto; }
@@ -792,6 +817,12 @@ img { max-width: 100%; }
   .fp-logos span { max-width: none; }
   .fp-header__sigla img { height: 42px; }
   .fp-card { padding: 1.25rem; }
+
+  /* La 390px, siglă + comutator + burger nu încap cu gap-ul și pastilele de
+     desktop (ies ~415px) — se strâng, ca bara să nu dea scroll orizontal. */
+  .fp-header__bara { gap: .5rem; }
+  .fp-switch { gap: 2px; padding: 3px; }
+  .fp-switch a { padding: .25rem .55rem; font-size: 13px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
