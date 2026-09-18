@@ -89,5 +89,7 @@ final class Bootstrap
         $container['auth']           = new Admin\Auth($container['db']);
         $container['login_throttle'] = new Admin\LoginThrottle($container['db'], 'admin');
         $container['meniu']          = new Meniu\Repository($container['db']);
+        $container['fisiere']        = new Fisiere\Repository($container['db']);
+        $container['upload']         = new Fisiere\Upload($container['settings']['upload']['dir'], $container['settings']['upload']['max_bytes']);
     }
 }

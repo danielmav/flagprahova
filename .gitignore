@@ -2,7 +2,9 @@
 .env
 .env.*
 !.env.example
-/fisiere/
+/fisiere/*
+!/fisiere/.htaccess
+!/fisiere/.gitkeep
 /materiale/
 /router.php
 /storage/cache/*
