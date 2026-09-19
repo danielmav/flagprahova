@@ -18,7 +18,7 @@
             <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#adm-side" aria-label="Meniu"><span class="navbar-toggler-icon"></span></button>
             <a class="navbar-brand" href="{{ base }}{{ admin_path }}">FLAG Prahova · administrare</a>
             <div class="d-flex align-items-center gap-2">
-                <a class="btn btn-sm btn-outline-light" href="{{ base }}/" target="_blank" rel="noopener">Vezi situl</a>
+                <a class="btn btn-sm btn-outline-light" href="{{ base }}/" target="_blank" rel="noopener">Vezi site-ul</a>
                 <form method="post" action="{{ base }}{{ admin_path }}/logout" class="d-flex align-items-center gap-2 m-0">
                     <input type="hidden" name="_csrf" value="{{ csrf }}">
                     <span class="text-white-50 small d-none d-md-inline">{{ utilizator.nume ?: utilizator.email }}</span>
