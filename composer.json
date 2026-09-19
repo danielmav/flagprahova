@@ -4,6 +4,11 @@
     "type": "project",
     "require": {
         "php": ">=8.1",
+        "ext-fileinfo": "*",
+        "ext-gd": "*",
+        "ext-iconv": "*",
+        "ext-mbstring": "*",
+        "ext-pdo_mysql": "*",
         "phpmailer/phpmailer": "^6.9",
         "slim/psr7": "^1.6",
         "slim/slim": "^4.12",
