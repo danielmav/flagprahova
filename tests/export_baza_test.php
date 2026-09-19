@@ -35,6 +35,11 @@ try {
     ok('  tokenurile/încercările/mesajele NU sunt', !str_contains($sql, $m . '0') && !str_contains($sql, str_repeat('b', 58) . $m) && !str_contains($sql, "mesaj-$m@example.com"));
     ok('  meniul e complet', substr_count($sql, 'INSERT INTO `meniu`') >= 1 && str_contains($sql, 'cooperare'));
     ok('  ordinea: sectiuni înainte de meniu', strpos($sql, 'CREATE TABLE `sectiuni`') < strpos($sql, 'CREATE TABLE `meniu`'));
+    ok('  fără avertismente mysqldump în dump', !str_contains($sql, '[Warning]'));
+    $parola = (string) (settings()['db']['pass'] ?? '');
+    if ($parola !== '') {
+        ok('  parola bazei NU e în dump', !str_contains($sql, $parola));
+    }
 } finally {
     if ($uid) {
         $pdo->exec("DELETE FROM parola_tokens WHERE utilizator_id = $uid");
