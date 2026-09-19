@@ -8,10 +8,17 @@ Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO
 ## Server / deploy
 - Hosting CloudLinux/cPanel cu CageFS: `/opt/cpanel/ea-php83/.../php` NU e vizibil din `.cpanel.yml` (composer pică) → `vendor/` se urcă ca `vendor.zip` (construit local: `composer install --no-dev` pe o copie a `composer.json`+`lock`, apoi Compress-Archive) și se extrage în `~/repositories/flagprahova/`; PHP-ul din docroot e „inherits the PHP package" (PHP Selector), fără bloc handler în `.htaccess`.
 - Hosting cPanel FĂRĂ SSH (nu se poate activa pe planul curent): deploy DOAR prin cPanel Git Version Control (`.cpanel.yml`), baza se exportă local (`mysqldump`) și se importă prin phpMyAdmin, `fisiere/` (3 GB) se urcă prin FTP/File Manager; `DB_WP_NAME` gol pe server; PHP 8.3 la lansare.
+- cPanel Git Version Control: refuză URL-uri HTTPS cu credențiale (`https://<token>@github.com/…`), SSH de ieșire spre GitHub e blocat pe host, iar generatorul de chei din cPanel cere obligatoriu parolă (inutilizabil la deploy) → repo-ul GitHub e PUBLIC și clonat prin HTTPS simplu. Clone-ul rulează în fundal (lista nu se reîmprospătează; F5); un clone eșuat dispare tăcut și lasă `~/repositories/<nume>` gol.
+- Jurnalele de deploy: `~/.cpanel/logs/vc_<timestamp>_git_deploy.log` (File Manager, fișiere ascunse); „Information about the most recent deployment is unavailable" după un deploy = a picat. Local, Daniel le salvează în `materiale/erori/` (gitignored).
+- `vendor.zip` se construiește local: `cp composer.json composer.lock $TEMP/fp-vendor/ && php C:/laragon/bin/composer/composer.phar install --no-dev --optimize-autoloader` acolo (wrapper-ul `composer` din PATH nu merge din Git Bash), apoi `Compress-Archive` → `storage/migrare/vendor.zip` (~0,7 MB); se extrage în `~/repositories/flagprahova/` (rezultă `vendor/autoload.php` direct, nu `vendor/vendor/`).
+- Verificarea staging-ului după deploy: `curl -sI https://flagprahova.ro/nou/{,robots.txt,health,admin/login,2014-2020/cooperare,templates/}` + eșantion de 25 de `fisiere.cale` din baza locală (`mysql -N` scoate CRLF → `c=${c%$'\r'}` înainte de a compune URL-ul).
 - Date de conectare (cPanel, admin vechi) în `materiale/dateconectare.txt` (gitignored) — nu le lipi în transcript.
 
 ## Comenzi
 - Cont admin local: `admin@flagprahova.ro` / `parola-locala`. Baza locală e deja MIGRATĂ (255 intrări, 991 fișiere); `php database/verifica_migrare.php` trebuie să dea exit 0.
+- `materiale/dateconectare.txt` are linii FĂRĂ etichetă (parola e pe rândul de sub cont) → nu-l citi cu cat/grep/awk; `.env`-ul de staging se generează cu `php scripts/gen_env_staging.php` (citește fișierul, scrie `storage/migrare/env-staging.txt`, afișează doar host/port/user/lungimi).
+- Fără `python3`, fără parser YAML local (js-yaml/PyYAML/ext-yaml) → `.cpanel.yml` se verifică vizual; blob-ul git e LF chiar dacă working copy e CRLF.
+- `scripts/export_baza.php` refuză să ruleze fără un cont în `utilizatori` în afară de `admin@flagprahova.ro` (intenționat); pe server utilizatorul MySQL e `flagprah_daniel` (nu `flagprah_nou` cum zice runbook-ul A.5/B.1).
 - PHP CLI: `C:/laragon/bin/php/php-8.3.31-nts-Win32-vs16-x64/php.exe` (`php` din PATH e tot 8.3, dar ținem calea explicită pentru extensii).
 - MySQL: `C:/laragon/bin/mysql/mysql-8.0.30-winx64/bin/mysql.exe -u root --default-character-set=utf8mb4 flagprahova`. NU pasa diacritice pe linia de comandă.
 - Migrare/seed: `php database/migrate.php && php database/seed.php` (idempotente). Cont: `php database/create_admin.php email nume parola`.
