@@ -12,7 +12,9 @@ deployment:
   tasks:
     - export REPO=/home/flagprah/repositories/flagprahova
     - export DEPLOYPATH=/home/flagprah/public_html/nou
-    - export PHP=/opt/cpanel/ea-php83/root/usr/bin/php
+    # PHP de CLI: pe CloudLinux/CageFS binarul ea-php83 NU e vizibil (verificat 2026-09-19),
+    # asa ca se cauta in ordine; ultima varianta e `php` din PATH (versiunea din PHP Selector).
+    - PHP=php; for p in /opt/cpanel/ea-php83/root/usr/bin/php /opt/alt/php83/usr/bin/php /usr/local/bin/php /usr/bin/php; do if [ -x "$p" ]; then PHP="$p"; break; fi; done; export PHP; echo "PHP folosit=$PHP"; $PHP -v | head -1
     # composer.phar se urcă O DATĂ prin File Manager în /home/flagprah/ (descărcat de pe getcomposer.org).
     # Dacă lipsește (sau pică), deploy-ul NU se oprește: se folosește vendor/ deja existent în repo
     # (urcat ca arhivă prin File Manager în ~/repositories/flagprahova/vendor — vezi docs/runbook-lansare.md).
