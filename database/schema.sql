@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS meniu (
   url           VARCHAR(500) NULL,
   sablon        ENUM('standard','contact') NOT NULL DEFAULT 'standard',
   vizibil       TINYINT(1)   NOT NULL DEFAULT 1,
+  publicat_la   DATE         NULL,
   legacy_id     INT UNSIGNED NULL,
   creat_la      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   modificat_la  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
