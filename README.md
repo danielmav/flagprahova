@@ -40,6 +40,12 @@ ignorat de git).
 
 ## Staging / producție
 
+Găzduirea (cPanel) nu are acces SSH. Procedura completă e în `docs/runbook-lansare.md`; pe scurt:
+export local al bazei cu `scripts/export_baza.php` → import prin phpMyAdmin; `fisiere/` urcat prin
+FTP; codul prin cPanel → Git™ Version Control („Deploy HEAD Commit”), după rețeta din `.cpanel.yml`;
+`composer.phar` sau `vendor.zip` urcate manual prin File Manager, dacă pasul composer din
+`.cpanel.yml` pică.
+
 Deploy-ul se face din cPanel → Git™ Version Control („Deploy HEAD Commit”), după rețeta din `.cpanel.yml`:
 repo-ul stă în `~/repositories/flagprahova`, în afara docroot-ului, iar în docroot se copiază doar
 `src/`, `templates/`, `config/`, `assets/`, `vendor/`, `index.php` și `fisiere/.htaccess`.
@@ -64,17 +70,11 @@ Ce NU face deploy-ul și trebuie făcut manual — checklist la prima instalare:
     o valoare greșită trimite oamenii la un link care nu funcționează;
   - `ADMIN_PATH`, `BASE_PATH` — potrivite cu locul real al instalării.
 - [ ] **`storage/`** și **`fisiere/`** — scriibile de PHP (create de deploy, dar verifică drepturile).
-- [ ] **Baza de date** — rulate o singură dată, din repo, cu PHP 8.3
-      (`/opt/cpanel/ea-php83/root/usr/bin/php`), nu din docroot:
-
-  ```bash
-  cd ~/repositories/flagprahova
-  /opt/cpanel/ea-php83/root/usr/bin/php database/migrate.php
-  /opt/cpanel/ea-php83/root/usr/bin/php database/seed.php
-  /opt/cpanel/ea-php83/root/usr/bin/php database/create_admin.php email@exemplu.ro "Nume Prenume" parola
-  ```
-
-  Scripturile citesc `.env`-ul din repo, deci acolo trebuie să fie aceleași `DB_*` ca în docroot.
+- [ ] **Baza de date** — fără SSH nu se pot rula scripturi PHP pe server. Schema și conținutul vin
+      dintr-un dump: local, `php scripts/export_baza.php` → `storage/migrare/flagprahova-server.sql`,
+      importat în baza goală prin phpMyAdmin. Contul admin al clientului se creează tot local
+      (`database/create_admin.php`) înainte de export, nu pe server. Procedura pas cu pas e în
+      `docs/runbook-lansare.md`.
 - [ ] **Verificare că nu se servește ce nu trebuie** — după deploy, următoarele trebuie să dea **403**:
       `/templates/`, `/config/`, `/storage/`, `/fisiere/x.php`. Dacă vreuna dă 200 sau 404 cu listare,
       `.htaccess`-ul din docroot sau `fisiere/.htaccess` lipsește ori nu e citit (`AllowOverride`).
@@ -125,8 +125,11 @@ se rulează pe server. Procedura este:
 4. Pe server, `DB_WP_NAME` rămâne **gol** în `.env`: aplicația publică nu are nevoie de baza
    WordPress veche, iar scripturile de migrare nu trebuie să poată rula acolo.
 
+Procedura completă de staging și lansare (pas cu pas, cu verificări) e în `docs/runbook-lansare.md`.
+
 ## Documentație
 
 Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`
 Planuri: `docs/superpowers/plans/`
+Runbook de lansare: `docs/runbook-lansare.md`
 Note de implementare pentru Claude: `CLAUDE.md`

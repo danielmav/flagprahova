@@ -13,7 +13,11 @@ deployment:
     - export REPO=/home/flagprah/repositories/flagprahova
     - export DEPLOYPATH=/home/flagprah/public_html/nou
     - export PHP=/opt/cpanel/ea-php83/root/usr/bin/php
-    - cd $REPO && $PHP /home/flagprah/composer.phar install --no-dev --optimize-autoloader --no-interaction
+    # composer.phar se urcă O DATĂ prin File Manager în /home/flagprah/ (descărcat de pe getcomposer.org).
+    # Dacă lipsește (sau pică), deploy-ul NU se oprește: se folosește vendor/ deja existent în repo
+    # (urcat ca arhivă prin File Manager în ~/repositories/flagprahova/vendor — vezi docs/runbook-lansare.md).
+    - if [ -f /home/flagprah/composer.phar ]; then cd $REPO && $PHP /home/flagprah/composer.phar install --no-dev --optimize-autoloader --no-interaction || echo "composer a esuat, folosesc vendor/ existent"; fi
+    - test -f $REPO/vendor/autoload.php || { echo "LIPSESTE vendor/autoload.php in repo"; exit 1; }
     - /bin/mkdir -p $DEPLOYPATH/storage/cache/twig $DEPLOYPATH/storage/logs $DEPLOYPATH/fisiere
     # fisiere/.htaccess blocheaza executia PHP in directorul de uploaduri. Continutul
     # lui vine din repo (nu-l scrie nimeni pe host), deci se copiaza la fiecare deploy:
