@@ -114,11 +114,9 @@ se rulează pe server. Procedura este:
 
 1. Migrarea se rulează **local**, pe o copie a bazei WordPress vechi (`DB_WP_*` în `.env`
    local), până când `verifica_migrare.php` iese cu 0.
-2. Baza locală rezultată se exportă cu `mysqldump` și se importă pe server prin **phpMyAdmin**:
-
-   ```bash
-   mysqldump -u root --default-character-set=utf8mb4 --single-transaction flagprahova > flagprahova.sql
-   ```
+2. Baza locală rezultată se exportă cu `php scripts/export_baza.php` →
+   `storage/migrare/flagprahova-server.sql` (fără contul local, fără tokenuri/mesaje); importă-l
+   în phpMyAdmin în baza goală a sitului.
 
    (dacă importul prin phpMyAdmin depășește limita de upload, se împarte fișierul sau se
    folosește opțiunea de import din fișier deja urcat prin FTP).
