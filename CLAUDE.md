@@ -2,10 +2,11 @@
 
 Slim 4 + Twig + PDO, PHP ≥ 8.1, fără build step; Bootstrap/Quill/SortableJS vendorate în `assets/vendor/`.
 Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`. Planuri: `docs/superpowers/plans/`.
-Stadiu: Plan 1 (admin) și Plan 2 (migrare WP) mergeuite în `main` (2026-09-18). Plan 3 (sit public) mergeuit în `main` (2026-09-18); urmează Plan 4 = staging/lansare (plan scris: `docs/superpowers/plans/2026-09-19-plan-4-staging-si-lansare.md`; deploy planificat 2026-09-19).
+Stadiu: Plan 1 (admin) și Plan 2 (migrare WP) mergeuite în `main` (2026-09-18). Plan 3 (sit public) mergeuit în `main` (2026-09-18); Plan 4: task-urile 1–4 mergeuite în `main` (2026-09-19); STAGING funcțional pe `https://flagprahova.ro/nou/` din 2026-09-19 (deploy prin cPanel Git, baza `flagprah_nou`, cont admin daniel.mirea@gmail.com); urmează validarea clientului și lansarea (runbook §C, `docs/runbook-lansare.md`).
 Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO) sunt în `~/.claude/CLAUDE.md`.
 
 ## Server / deploy
+- Hosting CloudLinux/cPanel cu CageFS: `/opt/cpanel/ea-php83/.../php` NU e vizibil din `.cpanel.yml` (composer pică) → `vendor/` se urcă ca `vendor.zip` (construit local: `composer install --no-dev` pe o copie a `composer.json`+`lock`, apoi Compress-Archive) și se extrage în `~/repositories/flagprahova/`; PHP-ul din docroot e „inherits the PHP package" (PHP Selector), fără bloc handler în `.htaccess`.
 - Hosting cPanel FĂRĂ SSH (nu se poate activa pe planul curent): deploy DOAR prin cPanel Git Version Control (`.cpanel.yml`), baza se exportă local (`mysqldump`) și se importă prin phpMyAdmin, `fisiere/` (3 GB) se urcă prin FTP/File Manager; `DB_WP_NAME` gol pe server; PHP 8.3 la lansare.
 - Date de conectare (cPanel, admin vechi) în `materiale/dateconectare.txt` (gitignored) — nu le lipi în transcript.
 
