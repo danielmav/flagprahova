@@ -1,8 +1,10 @@
 {% extends 'sectiune/_baza.twig' %}
 {% block corp %}
-<div class="fp-prose">{{ rand.continut_html|raw }}</div>
-<section class="fp-form mt-5" id="formular">
+<div class="fp-prose">{{ rand.continut_html|cu_baza|raw }}</div>
+<section class="fp-form fp-form--contact mt-5" id="formular">
+    <span class="fp-eyebrow">Scrie-ne</span>
     <h2 class="h4">Trimite-ne un mesaj</h2>
+    <p class="fp-form__intro">Completează formularul și îți răspundem în zilele lucrătoare.</p>
     {% block formular %}
     {% if trimis %}<div class="alert alert-success" role="status">Mesajul a fost trimis. Îți mulțumim — revenim cât de curând.</div>{% endif %}
     {% if form.erori._ is defined %}<div class="alert alert-danger" role="alert">{{ form.erori._ }}</div>{% endif %}

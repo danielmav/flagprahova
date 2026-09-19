@@ -1,6 +1,6 @@
 {% extends 'sectiune/_baza.twig' %}
 {% block corp %}
-<div class="fp-prose">{{ rand.continut_html|raw }}</div>
+<div class="fp-prose">{{ rand.continut_html|cu_baza|raw }}</div>
 {% if galerii %}
 {# Galeriile-copil, sub conținut: doar prima e deschisă, restul se încarcă la click
    (imaginile au `loading="lazy"`), ca o pagină cu 14 galerii să rămână ușoară. #}

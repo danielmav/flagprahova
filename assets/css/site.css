@@ -365,14 +365,90 @@ img { max-width: 100%; }
   margin-top: 1.75rem;
 }
 
-.fp-hero__ilustratie {
-  display: block;
+/* --- Hero cu fotografie ------------------------------------------------- */
+/* Fotografia stă în spate (`object-fit: cover`), peste ea un voal bleumarin
+   (`::before`) ca textul alb să rămână lizibil (≥ 4,5:1) pe orice zonă a imaginii,
+   iar conținutul (`.fp-hero__continut`) deasupra. */
+.fp-hero--foto {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--fp-navy-deep);
+  color: #fff;
+}
+
+.fp-hero--foto::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(27, 31, 74, .72) 0%, rgba(27, 31, 74, .55) 55%, rgba(27, 31, 74, .78) 100%);
+}
+
+.fp-hero__fundal,
+.fp-hero__slide {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   width: 100%;
-  /* `height: auto`: fără ea, browserul folosește atributul `height="480"` din
-     HTML și ilustrația iese întinsă (280×480 pe mobil). */
-  height: auto;
-  max-width: 520px;
-  margin-inline: auto;
+  height: 100%;
+  object-fit: cover;
+  max-width: none;
+}
+
+.fp-hero__continut { position: relative; z-index: 2; }
+
+.fp-hero--foto h1 { color: #fff; }
+
+.fp-hero--foto .fp-hero__text p,
+.fp-hero--foto .fp-lead { color: rgba(255, 255, 255, .86); }
+
+.fp-hero--foto .fp-eyebrow { background: rgba(255, 255, 255, .16); color: #fff; }
+
+.fp-hero--foto .fp-btn { background: #fff; border-color: #fff; color: var(--fp-navy); }
+
+.fp-hero--foto .fp-btn:hover,
+.fp-hero--foto .fp-btn:focus-visible { background: var(--fp-accent); border-color: var(--fp-accent); color: var(--fp-navy-deep); }
+
+.fp-hero--foto .fp-btn--outline { background: transparent; border-color: rgba(255, 255, 255, .8); color: #fff; }
+
+.fp-hero--foto .fp-btn--outline:hover,
+.fp-hero--foto .fp-btn--outline:focus-visible { background: #fff; border-color: #fff; color: var(--fp-navy); }
+
+/* Casetele perioadelor stau pe fotografie, în același bloc cu titlul; eticheta
+   perioadei din card rămâne bleu pe alb (regula pentru fundal închis nu se aplică). */
+.fp-hero--foto .fp-card .fp-eyebrow { background: var(--fp-blue-soft); color: var(--fp-navy); }
+
+.fp-hero--landing .fp-hero__text { max-width: 60ch; }
+
+.fp-hero--landing .fp-hero__text p { max-width: none; }
+
+.fp-hero--landing .fp-card .fp-btn { background: var(--fp-navy); border-color: var(--fp-navy); color: #fff; }
+
+.fp-hero--landing .fp-card:hover .fp-btn { background: var(--fp-blue); border-color: var(--fp-blue); }
+
+/* Slider CSS: 3 imagini, ciclu de 18 s, fiecare vizibilă ~6 s cu fondu de 1 s.
+   Prima pornește vizibilă (fără „gaură" la încărcare). */
+.fp-hero__slide { opacity: 0; animation: fp-slide 18s ease-in-out infinite; }
+
+.fp-hero__slide:nth-child(1) { animation-name: fp-slide-prima; }
+.fp-hero__slide:nth-child(2) { animation-delay: 6s; }
+.fp-hero__slide:nth-child(3) { animation-delay: 12s; }
+
+@keyframes fp-slide {
+  0% { opacity: 0; }
+  6% { opacity: 1; }
+  33.33% { opacity: 1; }
+  39.33% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes fp-slide-prima {
+  0% { opacity: 1; }
+  33.33% { opacity: 1; }
+  39.33% { opacity: 0; }
+  94% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 /* --- Eyebrow ------------------------------------------------------------ */
@@ -622,7 +698,7 @@ img { max-width: 100%; }
 .fp-contact-rapid a { color: var(--fp-navy); }
 
 /* --- Banda de contact (CTA) -------------------------------------------- */
-.fp-cta { padding: 4rem 0 0; background: linear-gradient(180deg, var(--fp-sky), #fff); text-align: center; }
+.fp-cta { padding: 4rem 0; background: linear-gradient(180deg, var(--fp-sky), #fff); text-align: center; }
 
 .fp-cta p { max-width: 56ch; margin-inline: auto; color: var(--fp-muted); }
 
@@ -754,6 +830,42 @@ img { max-width: 100%; }
 
 .fp-form .invalid-feedback { font-size: 13px; }
 
+/* Formularul de contact: panou bleu cu un disc portocaliu decorativ, ca pagina
+   să nu fie doar text negru pe alb. */
+.fp-form--contact {
+  position: relative;
+  overflow: hidden;
+  padding: 2rem;
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-radius);
+  background: linear-gradient(135deg, var(--fp-blue-soft) 0%, #F7F9FD 100%);
+}
+
+.fp-form--contact::before {
+  content: "";
+  position: absolute;
+  top: -70px;
+  right: -70px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(236, 140, 22, .28), rgba(236, 140, 22, 0) 70%);
+  pointer-events: none;
+}
+
+.fp-form--contact > * { position: relative; }
+
+.fp-form--contact .fp-eyebrow { background: #fff; margin-bottom: .5rem; }
+
+.fp-form__intro { margin-bottom: 1.25rem; color: var(--fp-muted); }
+
+.fp-form--contact .form-control { background: #fff; }
+
+.fp-form--contact .fp-btn { background: var(--fp-accent); border-color: var(--fp-accent); color: var(--fp-navy-deep); }
+
+.fp-form--contact .fp-btn:hover,
+.fp-form--contact .fp-btn:focus-visible { background: var(--fp-navy); border-color: var(--fp-navy); color: #fff; }
+
 .fp-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
 /* --- Pagina interioară --------------------------------------------------- */
@@ -824,14 +936,15 @@ img { max-width: 100%; }
   .container > .row { --bs-gutter-x: 1.5rem; }
 
   .fp-hero { padding: 2.5rem 0; text-align: center; }
+  .fp-hero--foto .fp-hero__text { margin-inline: auto; }
+  .fp-form--contact { padding: 1.25rem; }
 
   .fp-hero__text p { margin-inline: auto; }
   .fp-hero__actiuni { justify-content: center; }
 
-  .fp-hero__ilustratie { width: 60%; margin-top: 2rem; }
 
   .fp-section { padding: 3rem 0; }
-  .fp-cta { padding-top: 3rem; }
+  .fp-cta { padding: 3rem 0; }
   .fp-footer { padding-top: 2.5rem; }
 }
 
@@ -857,4 +970,6 @@ img { max-width: 100%; }
 
   .fp-card:hover { transform: none; }
   .fp-galerie__item:hover img { transform: none; }
+  .fp-hero__slide { animation: none; }
+  .fp-hero__slide:nth-child(1) { opacity: 1; }
 }

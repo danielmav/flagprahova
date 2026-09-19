@@ -33,7 +33,7 @@ try {
     ok('  blocul Noutăți cu documentul nostru + mărime', str_contains($c, "Comunicat $marca") && str_contains($c, '2 KB') && str_contains($c, "href=\"/fisiere/2026/09/comunicat-$marca.pdf\""));
     ok('  cardul pentru intrarea de nivel 1', preg_match('#class="fp-card[^"]*"[^>]*href="/2021-2027/ramura-' . strtolower($marca) . '"#', $c) === 1);
     ok('  butonul Contact din hero', str_contains($c, 'href="/2021-2027/contact"') || !str_contains($c, 'fp-hero__btn-contact'));
-    ok('  ilustrația', str_contains($c, 'assets/img/ilustratie.svg'));
+    ok('  fotografia de fundal a secțiunii', str_contains($c, 'fp-hero--foto') && str_contains($c, 'assets/img/hero/2021-2027-1920.webp'));
 } finally {
     if ($ids) { $pdo->exec('DELETE FROM meniu WHERE id IN (' . implode(',', array_reverse($ids)) . ')'); }
     if ($fid) { $pdo->exec("DELETE FROM fisiere WHERE id = $fid"); }

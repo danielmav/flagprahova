@@ -2,19 +2,22 @@
 {% block title %}{{ sectiune.titlu }} · Asociația FLAG Prahova{% endblock %}
 {% block description %}{{ sectiune.subtitlu }}{% endblock %}
 {% block content %}
-<section class="fp-hero">
-    <div class="container">
+{# Fotografia de fundal e aleasă după slug-ul secțiunii (assets/img/hero/{slug}-*.webp). #}
+<section class="fp-hero fp-hero--foto">
+    <img class="fp-hero__fundal" src="{{ base }}/assets/img/hero/{{ sectiune.slug }}-1920.webp"
+         srcset="{{ base }}/assets/img/hero/{{ sectiune.slug }}-960.webp 960w, {{ base }}/assets/img/hero/{{ sectiune.slug }}-1920.webp 1920w"
+         sizes="100vw" width="1920" height="640" alt="" fetchpriority="high" aria-hidden="true">
+    <div class="container fp-hero__continut">
         <div class="row align-items-center g-5">
-            <div class="col-lg-6">
+            <div class="col-lg-8 fp-hero__text">
                 <span class="fp-eyebrow">{{ sectiune.slug }}</span>
                 <h1 class="mt-3">{{ sectiune.titlu }}</h1>
-                <p class="lead">{{ sectiune.subtitlu }}</p>
-                <div class="d-flex flex-wrap gap-2 mt-3">
+                <p class="fp-lead">{{ sectiune.subtitlu }}</p>
+                <div class="d-flex flex-wrap gap-2 mt-3 fp-hero__actiuni">
                     {% for n in nivel1 %}{% if n.slug == 'noutati' and n.href != '' %}<a class="fp-btn" href="{{ n.href }}">Noutăți</a>{% endif %}{% endfor %}
                     {% if contact_href %}<a class="fp-btn fp-btn--outline fp-hero__btn-contact" href="{{ contact_href }}">Contact</a>{% endif %}
                 </div>
             </div>
-            <div class="col-lg-6"><img class="fp-hero__ilustratie" src="{{ base }}/assets/img/ilustratie.svg" alt="" width="640" height="480"></div>
         </div>
     </div>
 </section>
@@ -24,7 +27,7 @@
         <div class="row g-5 align-items-start">
             <div class="col-lg-7">
                 <span class="fp-eyebrow">Despre program</span>
-                <div class="fp-prose mt-3">{{ sectiune.acasa_html|raw }}</div>
+                <div class="fp-prose mt-3">{{ sectiune.acasa_html|cu_baza|raw }}</div>
             </div>
             <div class="col-lg-5">
                 {% if noutati %}

@@ -60,7 +60,7 @@ final class MeniuController
         $parent = (int) ($request->getQueryParams()['parent'] ?? 0) ?: null;
         return $this->formular($response, [
             'id' => null, 'sectiune_id' => (int) $sec['id'], 'parent_id' => $parent, 'titlu' => '', 'slug' => '',
-            'tip' => 'document', 'url' => '', 'fisier_id' => null, 'sablon' => 'standard', 'vizibil' => 1, 'continut_html' => '',
+            'tip' => 'document', 'url' => '', 'fisier_id' => null, 'sablon' => 'standard', 'vizibil' => 1, 'publicat_la' => null, 'continut_html' => '',
         ], $sec);
     }
 
@@ -134,6 +134,9 @@ final class MeniuController
             'fisier_id' => (int) ($in['fisier_id'] ?? 0) ?: null,
             'sablon' => in_array($in['sablon'] ?? '', Meniu::SABLOANE, true) ? $in['sablon'] : 'standard',
             'vizibil' => (int) (($in['vizibil'] ?? '0') === '1'),
+            // Data publicării (opțională): doar AAAA-LL-ZZ valid; altfel rămâne goală.
+            'publicat_la' => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($in['publicat_la'] ?? '')) && strtotime((string) $in['publicat_la']) !== false
+                ? (string) $in['publicat_la'] : null,
             'continut_html' => (string) ($in['continut_html'] ?? ''),
         ];
         // Sanitizăm ÎNAINTE de orice `formular()`: la re-randarea cu eroare (CSRF

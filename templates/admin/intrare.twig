@@ -58,6 +58,9 @@
                     </select></div>
                 <div class="mb-3"><label class="form-label" for="f-slug">Adresă (slug)</label>
                     <input class="form-control" id="f-slug" name="slug" value="{{ intrare.slug }}" placeholder="se generează din titlu"></div>
+                <div class="mb-3"><label class="form-label" for="f-publicat">Data publicării</label>
+                    <input class="form-control" id="f-publicat" name="publicat_la" type="date" value="{{ intrare.publicat_la }}">
+                    <div class="form-text">Apare sub noutăți și documente; dacă lipsește, se afișează luna încărcării fișierului.</div></div>
                 <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="f-vizibil" name="vizibil" value="1" {{ intrare.vizibil ? 'checked' }}>
                     <label class="form-check-label" for="f-vizibil">Vizibil pe site</label></div>
                 <button class="btn btn-primary w-100" type="submit">Salvează</button>

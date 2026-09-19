@@ -10,7 +10,7 @@ $coloane = function (string $tabel) use ($pdo): array {
 };
 $asteptat = [
     'sectiuni'        => ['id','slug','titlu','subtitlu','acasa_html','hero_imagine','ordine'],
-    'meniu'           => ['id','sectiune_id','parent_id','ordine','titlu','slug','tip','continut_html','fisier_id','url','sablon','vizibil','legacy_id','creat_la','modificat_la'],
+    'meniu'           => ['id','sectiune_id','parent_id','ordine','titlu','slug','tip','continut_html','fisier_id','url','sablon','vizibil','publicat_la','legacy_id','creat_la','modificat_la'],
     'fisiere'         => ['id','nume_afisat','cale','mime','marime','incarcat_la','incarcat_de','legacy_url'],
     'galerie_imagini' => ['id','meniu_id','fisier_id','ordine','legenda'],
     'utilizatori'     => ['id','email','nume','parola_hash','ultimul_login','creat_la'],

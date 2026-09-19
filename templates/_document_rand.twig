@@ -1,4 +1,7 @@
 {% set e = n.tip == 'document' ? ext(n.fisier_cale) : n.tip %}
+{# Data publicării: `publicat_la` dacă e completată din admin; altfel, pentru documente,
+   luna și anul din calea fișierului (`AAAA/LL/...`, data încărcării în WP/aici). #}
+{% set data = data_publicare(n.publicat_la|default(null), n.tip == 'document' ? n.fisier_cale : null) %}
 <div class="fp-doc" data-ext="{{ e }}">
     <span class="fp-doc__icon" aria-hidden="true">{% if n.tip == 'document' %}{{ e|upper }}{% else %}{% include '_icon.twig' with {'nume': n.tip} only %}{% endif %}</span>
     <div class="fp-doc__text">
@@ -10,6 +13,7 @@
             {%- elseif n.tip == 'galerie' %}Galerie foto
             {%- elseif n.tip == 'link' %}Link extern
             {%- else %}Pagină{% endif -%}
+            {%- if data %} · <time class="fp-doc__data"{% if n.publicat_la|default('') %} datetime="{{ n.publicat_la }}"{% endif %}>{{ data }}</time>{% endif -%}
         </span>
     </div>
 </div>

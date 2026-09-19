@@ -11,7 +11,7 @@ final class Repository
 {
     public const TIPURI  = ['pagina', 'document', 'dosar', 'link', 'galerie'];
     public const SABLOANE = ['standard', 'contact'];
-    private const COLOANE = ['parent_id', 'titlu', 'slug', 'tip', 'continut_html', 'fisier_id', 'url', 'sablon', 'vizibil', 'legacy_id'];
+    private const COLOANE = ['parent_id', 'titlu', 'slug', 'tip', 'continut_html', 'fisier_id', 'url', 'sablon', 'vizibil', 'publicat_la', 'legacy_id'];
 
     private PDO $pdo;
 
@@ -74,7 +74,7 @@ final class Repository
      */
     public function arborePublic(int $sectiuneId): array
     {
-        $st = $this->pdo->prepare('SELECT m.id, m.parent_id, m.ordine, m.titlu, m.slug, m.tip, m.url, m.sablon, m.vizibil, m.modificat_la,
+        $st = $this->pdo->prepare('SELECT m.id, m.parent_id, m.ordine, m.titlu, m.slug, m.tip, m.url, m.sablon, m.vizibil, m.publicat_la, m.modificat_la,
                 f.cale AS fisier_cale, f.marime AS fisier_marime, f.mime AS fisier_mime
             FROM meniu m LEFT JOIN fisiere f ON f.id = m.fisier_id
             WHERE m.sectiune_id = :s ORDER BY m.ordine, m.id');
@@ -165,8 +165,8 @@ final class Repository
         $st->execute($parent === null ? ['s' => $sid] : ['s' => $sid, 'p' => $parent]);
         $ordine = (int) $st->fetchColumn();
 
-        $st = $this->pdo->prepare('INSERT INTO meniu (sectiune_id, parent_id, ordine, titlu, slug, tip, continut_html, fisier_id, url, sablon, vizibil, legacy_id)
-            VALUES (:s, :p, :o, :t, :sl, :tip, :c, :f, :u, :sab, :v, :lg)');
+        $st = $this->pdo->prepare('INSERT INTO meniu (sectiune_id, parent_id, ordine, titlu, slug, tip, continut_html, fisier_id, url, sablon, vizibil, publicat_la, legacy_id)
+            VALUES (:s, :p, :o, :t, :sl, :tip, :c, :f, :u, :sab, :v, :pub, :lg)');
         $st->execute([
             's' => $sid, 'p' => $parent, 'o' => $ordine,
             't' => trim((string) $date['titlu']), 'sl' => $slug,
@@ -176,6 +176,7 @@ final class Repository
             'u' => ($date['url'] ?? '') !== '' ? (string) $date['url'] : null,
             'sab' => in_array($date['sablon'] ?? '', self::SABLOANE, true) ? $date['sablon'] : 'standard',
             'v' => (int) ($date['vizibil'] ?? 1),
+            'pub' => ($date['publicat_la'] ?? '') !== '' ? (string) $date['publicat_la'] : null,
             'lg' => isset($date['legacy_id']) ? (int) $date['legacy_id'] : null,
         ]);
         return (int) $this->pdo->lastInsertId();
@@ -209,7 +210,7 @@ final class Repository
         foreach (self::COLOANE as $c) {
             if (array_key_exists($c, $date)) {
                 $set[]   = "$c = :$c";
-                $par[$c] = $date[$c] === '' && in_array($c, ['fisier_id', 'url', 'continut_html', 'legacy_id'], true) ? null : $date[$c];
+                $par[$c] = $date[$c] === '' && in_array($c, ['fisier_id', 'url', 'continut_html', 'publicat_la', 'legacy_id'], true) ? null : $date[$c];
             }
         }
         if ($set === []) {

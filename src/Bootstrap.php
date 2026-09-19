@@ -143,7 +143,7 @@ final class Bootstrap
      * Funcțiile Twig folosite de șabloanele publice (documente, galerii).
      * @param array<string,mixed> $settings
      */
-    private static function functiiTwig(\Twig\Environment $env, array $settings, Public\Context $ctx): void
+    public static function functiiTwig(\Twig\Environment $env, array $settings, Public\Context $ctx): void
     {
         $base      = (string) $settings['app']['base_path'];
         $fisiere   = (string) $settings['upload']['url'];
@@ -169,6 +169,35 @@ final class Bootstrap
             static fn(string $cale, int $latime): string => $base . $fisiere . '/mini/' . $latime . '/'
                 . preg_replace('/\.[^.\/]+$/', '.webp', $cale)
         ));
+        // Conținutul din editor are `src`/`href` absolute față de rădăcina sitului
+        // (`/fisiere/2017/08/x.jpg`). Pe staging (BASE_PATH=/nou) ele ar cădea pe
+        // situl vechi, deci prefixăm baza la randare; nu la salvare, ca HTML-ul din
+        // bază să rămână portabil între medii. `//cdn` (protocol-relative) și căile
+        // care poartă deja baza rămân neatinse.
+        $env->addFilter(new \Twig\TwigFilter('cu_baza', static function (?string $html) use ($base): string {
+            $html = (string) $html;
+            if ($base === '' || $html === '') {
+                return $html;
+            }
+            return (string) preg_replace(
+                // `(?<![\w-])`: nu și `data-src="/…"`.
+                '#(?<![\w-])(src|href)=(["\'])/(?!/|' . preg_quote(ltrim($base, '/'), '#') . '/)#',
+                '$1=$2' . $base . '/',
+                $html
+            );
+        }));
+        // „12 iunie 2019" din `publicat_la`, altfel „august 2026" din calea fișierului
+        // (`AAAA/LL/...`); gol dacă nu avem nimic.
+        $env->addFunction(new \Twig\TwigFunction('data_publicare', static function (?string $data, ?string $cale): string {
+            $luni = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
+            if ($data !== null && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $data, $m)) {
+                return (int) $m[3] . ' ' . $luni[(int) $m[2] - 1] . ' ' . $m[1];
+            }
+            if ($cale !== null && preg_match('#^(\d{4})/(0[1-9]|1[0-2])/#', $cale, $m)) {
+                return $luni[(int) $m[2] - 1] . ' ' . $m[1];
+            }
+            return '';
+        }));
         // URL absolut, pentru canonical/OG/JSON-LD. Regula (APP_URL include deja
         // BASE_PATH) stă o singură dată, în `Context::urlPublic()`.
         $env->addFunction(new \Twig\TwigFunction(
