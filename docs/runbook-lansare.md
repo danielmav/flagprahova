@@ -8,10 +8,9 @@ Context: hosting cPanel **fără SSH** (nu se poate activa pe planul curent). De
 cPanel Git™ Version Control (`.cpanel.yml`); baza se exportă local și se importă prin phpMyAdmin;
 `fisiere/` (~3 GB) se urcă prin FTP/File Manager.
 
-Stare la 2026-09-19 (poate fi deja depășită de bifele de mai jos): `composer.phar` urcat în
-`/home/flagprah/`; PHP 8.3 setat în MultiPHP Manager; `fisiere/` urcat prin FTP în
-`public_html/nou/fisiere/`; baza `flagprah_nou` creată. Repo-ul e **public** pe GitHub
-(`https://github.com/danielmav/flagprahova.git`) — decizie luată azi, vezi nota din secțiunea B.3.
+Repo-ul e **public** pe GitHub (`https://github.com/danielmav/flagprahova.git`) — vezi nota din
+secțiunea B.3. Stadiul curent al lansării (ce e deja făcut) e în `CLAUDE.md` → „Stadiu" și în
+ledger-ul SDD, nu aici — acest fișier e o procedură reutilizabilă, nu un instantaneu.
 
 ---
 
@@ -77,10 +76,15 @@ Stare la 2026-09-19 (poate fi deja depășită de bifele de mai jos): `composer.
       `public_html/.htaccess`.
 - [ ] 7. Drepturi: `storage/`, `storage/cache/twig`, `storage/logs`, `fisiere/` scriibile (755 e
       suficient pe cPanel cu suPHP/LSAPI; **nu** 777).
-- [ ] 8. `fisiere/` — deja urcat prin FTP (FileZilla, portul 21, cont din `dateconectare.txt`;
-      SFTP nu e disponibil) în `public_html/nou/fisiere/` (toți anii `AAAA/`, fără `mini/`).
-      Verificare: în File Manager, numără fișierele din `fisiere/2017` etc. și compară cu local
-      (`find fisiere -type f -not -path 'fisiere/mini/*' | wc -l` = 991 + `.htaccess`).
+- [ ] 8. `fisiere/` prin **FTP** (FileZilla, portul 21, cont din `dateconectare.txt`; SFTP nu e
+      disponibil): urcă toți anii `fisiere/AAAA/` (fără `mini/`) în `public_html/nou/fisiere/`.
+      ~3 GB — pornește-l primul, durează ore; limitează la maximum 2 transferuri simultane.
+      Verificare: în File Manager, „Select All" în `fisiere/2017` etc. și compară numărul cu local
+      (`find fisiere -type f -not -path 'fisiere/mini/*' | wc -l` = 991 + `.htaccess`). Dacă
+      numerele diferă, rerulează transferul cu opțiunea FileZilla „Overwrite if different size" —
+      se retrimit doar fișierele lipsă sau incomplete.
+
+      (Deja urcat la 2026-09-19 — la o reluare, verifică doar numerele de mai sus.)
 - [ ] 9. Verificări (Claude, prin `curl`):
       - `https://flagprahova.ro/nou/` → 200 + `noindex`
       - `/nou/2014-2020/cooperare` → 200 + miniaturi 200
