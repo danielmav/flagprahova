@@ -7,8 +7,8 @@ $root = dirname(__DIR__);
 if (is_file($root . '/.env')) { Dotenv\Dotenv::createImmutable($root)->safeLoad(); }
 $s  = (require $root . '/config/settings.php')['db'];
 $opt = getopt('', ['out::', 'mysqldump::']);
-$out = $opt['out'] ?? $root . '/storage/migrare/flagprahova-server.sql';
-$dump = $opt['mysqldump'] ?? 'C:/laragon/bin/mysql/mysql-8.0.30-winx64/bin/mysqldump.exe';
+$out = !empty($opt['out']) ? $opt['out'] : $root . '/storage/migrare/flagprahova-server.sql';
+$dump = !empty($opt['mysqldump']) ? $opt['mysqldump'] : 'C:/laragon/bin/mysql/mysql-8.0.30-winx64/bin/mysqldump.exe';
 if (!is_file($dump)) { fwrite(STDERR, "mysqldump lipsește: $dump\n"); exit(1); }
 
 $pdo = (new App\Database($s))->pdo();
@@ -49,8 +49,15 @@ $sql .= $ruleaza(['sectiuni', 'fisiere', 'meniu', 'galerie_imagini', 'setari']);
 $sql .= $ruleaza(['--where=email <> \'admin@flagprahova.ro\'', 'utilizatori']);
 $sql .= $ruleaza(['--no-data', 'parola_tokens', 'login_incercari', 'mesaje_contact']);
 $sql .= "\nSET FOREIGN_KEY_CHECKS=1;\n";
-@mkdir(dirname($out), 0775, true);
-file_put_contents($out, $sql);
+$dirOut = dirname($out);
+if (!is_dir($dirOut) && !@mkdir($dirOut, 0775, true) && !is_dir($dirOut)) {
+    fwrite(STDERR, "nu am putut crea directorul: $dirOut\n");
+    exit(1);
+}
+if (file_put_contents($out, $sql) === false) {
+    fwrite(STDERR, "nu am putut scrie fișierul: $out\n");
+    exit(1);
+}
 
 foreach (['sectiuni', 'meniu', 'fisiere', 'galerie_imagini', 'setari', 'utilizatori'] as $t) {
     $n = $t === 'utilizatori' ? $clienti : (int) $pdo->query("SELECT COUNT(*) FROM `$t`")->fetchColumn();

@@ -105,9 +105,15 @@ ledger-ul SDD, nu aici — acest fișier e o procedură reutilizabilă, nu un in
 - [ ] 1. Backup WordPress: cPanel → Backup → „Download a Home Directory Backup" +
       „Download a MySQL Database Backup" pentru baza WP (ambele în `materiale/arhiva/`,
       gitignored).
-- [ ] 2. File Manager: redenumește `public_html` → `wp-vechi` (situl vechi cade ~10 minute),
-      creează `public_html` gol, mută `public_html/wp-vechi/nou/*` → `public_html/` (inclusiv
-      `.env`, `.htaccess`, `fisiere/`, `storage/`; mutarea în același filesystem e instantanee).
+- [ ] 2. File Manager: **întâi** Settings → bifează „Show Hidden Files (dotfiles)" (altfel `.env`
+      și `.htaccess` nu apar în listă și rămân neluate la mutare). Apoi: redenumește `public_html`
+      → `wp-vechi` (situl vechi cade ~10 minute; arborele vechi ajunge la
+      `/home/flagprah/wp-vechi`, NU `public_html/wp-vechi`), creează `public_html` gol, mută
+      `/home/flagprah/wp-vechi/nou/*` → `/home/flagprah/public_html/` (inclusiv `.env`,
+      `.htaccess`, `fisiere/`, `storage/`; mutarea în același filesystem e instantanee).
+
+      **Notă:** nu apăsa Deploy HEAD Commit între C.2 și C.4 — ar recrea o copie veche în
+      `public_html/nou/`.
 - [ ] 3. Editează `.env`: `APP_URL=https://flagprahova.ro`, `BASE_PATH=` gol,
       `APP_INDEXABLE=true`.
 - [ ] 4. Local: în `.cpanel.yml`, `DEPLOYPATH=/home/flagprah/public_html`; commit

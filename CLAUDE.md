@@ -14,7 +14,7 @@ Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO
 - PHP CLI: `C:/laragon/bin/php/php-8.3.31-nts-Win32-vs16-x64/php.exe` (`php` din PATH e tot 8.3, dar ținem calea explicită pentru extensii).
 - MySQL: `C:/laragon/bin/mysql/mysql-8.0.30-winx64/bin/mysql.exe -u root --default-character-set=utf8mb4 flagprahova`. NU pasa diacritice pe linia de comandă.
 - Migrare/seed: `php database/migrate.php && php database/seed.php` (idempotente). Cont: `php database/create_admin.php email nume parola`.
-- Teste: `for t in tests/*_test.php; do php "$t" || echo "FAIL: $t"; done` — rulează în proces pe baza REALĂ `flagprahova`, indiferent de conținutul ei; fiecare test își șterge/restaurează datele în `finally`. Rulează suita de DOUĂ ORI la rând ca dovadă că nu lasă urme (apoi `verifica_migrare.php`).
+- Teste: `for t in tests/*_test.php; do php "$t" || echo "FAIL: $t"; done` — rulează în proces pe baza REALĂ `flagprahova`, indiferent de conținutul ei (excepție: `tests/export_baza_test.php` presupune baza migrată — meniu cu `cooperare`, dump > 100 KB); fiecare test își șterge/restaurează datele în `finally`. Rulează suita de DOUĂ ORI la rând ca dovadă că nu lasă urme (apoi `verifica_migrare.php`).
 - Capturi: `node tests/capturi.mjs` → `storage/shots/` (landing, acasă 2021/2014, pagină, dosar, contact, 404, login admin — desktop 1366 și „mobil” 390). Chrome headless are lățime minimă ~500 px → captura „mobil” la 390 px iese tăiată (nu e bug CSS); paginile autentificate se capturează cu Puppeteer (nu există încă).
 
 ## Convenții

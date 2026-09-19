@@ -18,7 +18,8 @@ try {
     // cont temporar de client + un token + o încercare + un mesaj, care NU trebuie să ajungă în dump
     $pdo->prepare('INSERT INTO utilizatori (email, nume, parola_hash) VALUES (:e, "Client Test", "x")')->execute(['e' => "client-$m@example.com"]);
     $uid = (int) $pdo->lastInsertId();
-    $pdo->prepare('INSERT INTO parola_tokens (utilizator_id, token_hash, expira_la) VALUES (:u, :h, NOW())')->execute(['u' => $uid, 'h' => str_repeat('a', 57) . $m . '0']);
+    $token = str_repeat('a', 57) . $m . '0';
+    $pdo->prepare('INSERT INTO parola_tokens (utilizator_id, token_hash, expira_la) VALUES (:u, :h, NOW())')->execute(['u' => $uid, 'h' => $token]);
     $pdo->prepare('INSERT INTO login_incercari (ip_hash, scope) VALUES (:h, "admin")')->execute(['h' => str_repeat('b', 58) . $m]);
     $pdo->prepare('INSERT INTO mesaje_contact (nume, email, mesaj) VALUES ("T", :e, "secret")')->execute(['e' => "mesaj-$m@example.com"]);
 
@@ -32,7 +33,7 @@ try {
     }
     ok('  contul local NU e în dump', !str_contains($sql, 'admin@flagprahova.ro'));
     ok('  contul clientului E în dump', str_contains($sql, "client-$m@example.com"));
-    ok('  tokenurile/încercările/mesajele NU sunt', !str_contains($sql, $m . '0') && !str_contains($sql, str_repeat('b', 58) . $m) && !str_contains($sql, "mesaj-$m@example.com"));
+    ok('  tokenurile/încercările/mesajele NU sunt', !str_contains($sql, $token) && !str_contains($sql, str_repeat('b', 58) . $m) && !str_contains($sql, "mesaj-$m@example.com"));
     ok('  meniul e complet', substr_count($sql, 'INSERT INTO `meniu`') >= 1 && str_contains($sql, 'cooperare'));
     ok('  ordinea: sectiuni înainte de meniu', strpos($sql, 'CREATE TABLE `sectiuni`') < strpos($sql, 'CREATE TABLE `meniu`'));
     ok('  fără avertismente mysqldump în dump', !str_contains($sql, '[Warning]'));
