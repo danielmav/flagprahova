@@ -132,4 +132,5 @@ Procedura completă de staging și lansare (pas cu pas, cu verificări) e în `d
 Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`
 Planuri: `docs/superpowers/plans/`
 Runbook de lansare: `docs/runbook-lansare.md`
+Manualul clientului (administrare): `docs/manual-admin.md`
 Note de implementare pentru Claude: `CLAUDE.md`
