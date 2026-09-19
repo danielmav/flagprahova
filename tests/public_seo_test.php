@@ -27,6 +27,8 @@ try {
 
     $r = cerere('GET', '/admin/login');
     ok('adminul e noindex', str_contains(corp($r), 'noindex'));
+
+    ok('implicit indexabil', str_contains(corp(cerere('GET', '/')), 'content="index,follow'));
 } finally {
     if ($ids) { $pdo->exec('DELETE FROM meniu WHERE id IN (' . implode(',', array_reverse($ids)) . ')'); }
     if ($fid) { $pdo->exec("DELETE FROM fisiere WHERE id = $fid"); }

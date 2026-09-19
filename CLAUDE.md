@@ -50,6 +50,7 @@ Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO
 - `scripts/descarca_fonturi.php` dedupează pe conținut: Google servește un singur woff2 variabil pentru toate greutățile DM Sans → 4 fișiere în `assets/fonts/`, 8 reguli `@font-face` (500/700 refolosesc `dm-sans-400-*.woff2`; e corect).
 - La dispatch de subagenți pune explicit linia `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` în prompt, altfel folosesc atribuirea din reminderul lor.
 - Restanțe pentru Plan 4 (din revizia finală M3): gardă de megapixeli la `Fisiere\Miniatura` (PNG uriaș → OOM), HTML-ul public nu e cache-abil (sesiune pornită pe orice cerere), `X-Forwarded-For` la throttle dacă e proxy, `IP_SALT` și `SMTP_HOST` reale pe server.
+- `APP_INDEXABLE=false` (staging) → noindex pe tot situl public + `robots.txt` `Disallow: /`; `Fisiere\Miniatura::MAX_PIXELI` (40 MP) refuză sursele uriașe cu 404 înainte de decodare.
 
 ## Migrare din WordPress
 

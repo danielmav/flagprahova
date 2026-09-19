@@ -46,6 +46,10 @@ final class SeoController
 
     public function robots(Request $request, Response $response): Response
     {
+        if (!(bool) $this->container['settings']['app']['indexable']) {
+            $response->getBody()->write("User-agent: *\nDisallow: /\n");
+            return $response->withHeader('Content-Type', 'text/plain; charset=utf-8');
+        }
         // Căile din `Disallow` sunt relative la host, deci poartă `base_path`;
         // calea adminului vine din setări (`ADMIN_PATH`), nu e hardcodată.
         $baza  = $this->ctx->base();

@@ -11,7 +11,7 @@
     <title>{% block title %}Asociația FLAG Prahova{% endblock %}</title>
     <meta name="description" content="{% block description %}{{ setari.landing_text|default('') }}{% endblock %}">
     <link rel="canonical" href="{{ canonical }}">
-    <meta name="robots" content="{% block meta_robots %}index,follow,max-image-preview:large{% endblock %}">
+    <meta name="robots" content="{% if not app.indexable %}noindex,nofollow{% else %}{% block meta_robots %}index,follow,max-image-preview:large{% endblock %}{% endif %}">
     <meta name="theme-color" content="#272B5C">
     <meta property="og:type" content="{% block og_type %}website{% endblock %}">
     <meta property="og:site_name" content="Asociația FLAG Prahova">

@@ -8,6 +8,7 @@ return [
         'url'       => rtrim($_ENV['APP_URL'] ?? 'http://flagprahova.test', '/'),
         'base_path' => rtrim($_ENV['BASE_PATH'] ?? '', '/'),
         'name'      => 'FLAG Prahova',
+        'indexable' => filter_var($_ENV['APP_INDEXABLE'] ?? true, FILTER_VALIDATE_BOOL),
     ],
     'admin' => [
         'path' => '/' . trim($_ENV['ADMIN_PATH'] ?? 'admin', '/'),

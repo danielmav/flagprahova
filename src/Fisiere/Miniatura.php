@@ -11,6 +11,7 @@ namespace App\Fisiere;
 final class Miniatura
 {
     public const LATIMI = [480, 1600];
+    public const MAX_PIXELI = 40_000_000;
     private const CALE_OK = '#^\d{4}/\d{2}/[A-Za-z0-9._-]+\.(jpe?g|png|webp)$#i';
 
     public function __construct(private string $dirFisiere) {}
@@ -30,6 +31,8 @@ final class Miniatura
         if (is_file($dest)) { return $dest; }
         $sursa = $this->dirFisiere . '/' . $cale;
         if (!is_file($sursa)) { return null; }
+        $dim = @getimagesize($sursa);
+        if ($dim === false || ($dim[0] * $dim[1]) > self::MAX_PIXELI) { return null; }
         $vechi = ini_get('memory_limit') ?: '128M';
         ini_set('memory_limit', '512M');
         try {
