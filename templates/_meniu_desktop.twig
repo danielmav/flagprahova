@@ -21,7 +21,7 @@
             {# Document fără fișier atașat: text, nu link mort. #}
             <span class="{{ clasa_link }} is-inactiv">{{ n.titlu }}</span>
         {% else %}
-            <a class="{{ clasa_link }}{% if n.id in activ %} is-activ{% endif %}" href="{{ n.href }}"{% if n.extern %} target="_blank" rel="noopener noreferrer"{% endif %}{% if n.id in activ %} aria-current="page"{% endif %}>{{ n.titlu }}</a>
+            <a class="{{ clasa_link }}{% if n.id in activ %} is-activ{% endif %}" href="{{ n.href }}"{% if n.fila_noua %} target="_blank" rel="noopener noreferrer"{% endif %}{% if n.id in activ %} aria-current="page"{% endif %}>{{ n.titlu }}</a>
         {% endif %}
         {% if are %}{% include '_meniu_desktop.twig' with {'noduri': n.copii, 'nivel': nivel + 1, 'activ': activ, 'inline': copii_inline} only %}{% endif %}
     </li>

@@ -13,6 +13,13 @@ final class Harta
     /** Intrările vechi care trec în secțiunea 2021-2027 (Noutăți + Strategie). */
     public const SET_2021 = [3622, 3615, 3617, 3604, 3607, 3609, 3611, 3613, 3620];
 
+    /**
+     * Intrări din Noutăți 2014-2020 mutate în Arhiva 2021-2027 (cerința clientului,
+     * 2026-09-22), în această ordine: DIGICO, recrutare personal, DigiWork,
+     * recrutare GT 313133, FOCUS, recrutare GT 313141, TPIC.
+     */
+    public const ARHIVA_2021_COPII = [3601, 3598, 3595, 3586, 3583, 3577, 3580];
+
     /** Pagina Acasă nu devine intrare de meniu — textul ei merge în `sectiuni.acasa_html`. */
     public const PAGINI_SARITE = [75];
 
@@ -23,8 +30,10 @@ final class Harta
 
     public const NOUTATI_2021 = 9001;
     public const STRATEGIE_2021 = 9002;
+    public const ARHIVA_2021 = 9005;
     public const UTILE_2021 = 9008;
     public const CONTACT_2021 = 9009;
+    public const RETETE_2021 = 9082; // pagina „Rețete” (fostul conținut al lui „Utile”)
 
     /** @var array<int, array{legacy:int,titlu:string,tip:string,sablon?:string,copii?:array}> */
     public const MENIU_2021 = [
@@ -32,20 +41,23 @@ final class Harta
         ['legacy' => 9002, 'titlu' => 'Strategie', 'tip' => 'dosar'],
         ['legacy' => 9003, 'titlu' => 'Acțiuni', 'tip' => 'dosar'],
         ['legacy' => 9004, 'titlu' => 'Apel lansare', 'tip' => 'dosar'],
-        ['legacy' => 9005, 'titlu' => 'Arhivă', 'tip' => 'dosar'],
         ['legacy' => 9006, 'titlu' => 'Proceduri operaționale FLAG', 'tip' => 'dosar'],
         ['legacy' => 9007, 'titlu' => 'Media', 'tip' => 'dosar', 'copii' => [
             ['legacy' => 9071, 'titlu' => 'Comunicate de presă', 'tip' => 'dosar'],
             ['legacy' => 9072, 'titlu' => 'Animări', 'tip' => 'dosar'],
             ['legacy' => 9073, 'titlu' => 'Galerie', 'tip' => 'dosar'],
         ]],
-        ['legacy' => 9008, 'titlu' => 'Utile', 'tip' => 'pagina'],
+        ['legacy' => 9008, 'titlu' => 'Utile', 'tip' => 'dosar', 'copii' => [
+            ['legacy' => 9081, 'titlu' => 'Documente', 'tip' => 'dosar'],
+            ['legacy' => 9082, 'titlu' => 'Rețete', 'tip' => 'pagina'],
+        ]],
+        ['legacy' => 9005, 'titlu' => 'Arhivă', 'tip' => 'dosar'],
         ['legacy' => 9009, 'titlu' => 'Contact', 'tip' => 'pagina', 'sablon' => 'contact'],
     ];
 
     public static function sectiuneaPentru(int $legacyId): string
     {
-        return in_array($legacyId, self::SET_2021, true) ? '2021-2027' : '2014-2020';
+        return in_array($legacyId, self::SET_2021, true) || in_array($legacyId, self::ARHIVA_2021_COPII, true) ? '2021-2027' : '2014-2020';
     }
 
     /** @return array{tip:string,url:?string,cale:?string,motiv:?string} */

@@ -56,6 +56,7 @@ try {
     ok('GET /2021-2027/ => 200', $r->getStatusCode() === 200);
     ok('  meniul pe 3 niveluri (desktop)', str_contains($c, "Dosar $marca") && str_contains($c, "Subdosar $marca") && str_contains($c, "Raport $marca"));
     ok('  documentul linkează direct la fișier', str_contains($c, "href=\"/fisiere/2026/09/raport-$marca.pdf\""));
+    ok('  documentul se deschide în filă nouă', preg_match('#<a[^>]+href="/fisiere/2026/09/raport-' . $marca . '.pdf"[^>]+target="_blank"[^>]+rel="noopener[^"]*"#', $c) === 1);
     ok('  linkul extern are noopener', preg_match('#<a[^>]+href="https://example\.com/x"[^>]+rel="noopener[^"]*"#', $c) === 1);
     ok('  invizibilul și orfanul lipsesc', !str_contains($c, "Ascuns $marca") && !str_contains($c, "Orfan $marca"));
     ok('  comutatorul duce la cealaltă perioadă', str_contains($c, 'href="/2014-2020/"'));

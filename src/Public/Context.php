@@ -80,12 +80,14 @@ final class Context
         return rtrim($taiat, " ,.;:–-") . '…';
     }
 
-    /** Arborele vizibil al secțiunii, cu `href` și `extern` pe fiecare nod. */
+    /** Arborele vizibil al secțiunii, cu `href`, `extern` și `fila_noua` pe fiecare nod. */
     public function arbore(array $sectiune): array
     {
         $decoreaza = function (array $lista) use (&$decoreaza, $sectiune): array {
             foreach ($lista as &$n) {
-                $n['extern'] = $n['tip'] === 'link';
+                $n['extern']    = $n['tip'] === 'link';
+                // Linkurile externe și documentele (PDF etc.) se deschid în filă nouă.
+                $n['fila_noua'] = $n['tip'] === 'link' || $n['tip'] === 'document';
                 $n['href']   = match ($n['tip']) {
                     'document' => $n['fisier_cale'] !== null
                         ? $this->base() . $this->settings['upload']['url'] . '/' . $n['fisier_cale']

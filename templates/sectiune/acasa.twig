@@ -48,7 +48,7 @@
         <div class="row g-4 mt-1">
             {% for n in nivel1 %}{% if n.href != '' %}
             <div class="col-sm-6 col-lg-3">
-                <a class="fp-card d-block h-100" href="{{ n.href }}"{% if n.extern %} target="_blank" rel="noopener noreferrer"{% endif %}>
+                <a class="fp-card d-block h-100" href="{{ n.href }}"{% if n.fila_noua %} target="_blank" rel="noopener noreferrer"{% endif %}>
                     <span class="fp-card__icon">{% include '_icon.twig' with {'nume': n.slug == 'noutati' ? 'noutati' : (n.slug == 'contact' ? 'contact' : n.tip)} only %}</span>
                     <span class="h5 d-block mt-3">{{ n.titlu }}</span>
                     {% if n.copii|length %}<span class="text-muted small">{{ n.copii|length }} {{ n.copii|length == 1 ? 'intrare' : 'intrări' }}</span>{% endif %}

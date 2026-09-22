@@ -47,7 +47,7 @@ try {
     $n20 = (int) $pdo->query("SELECT COUNT(*) FROM meniu WHERE sectiune_id=$sid20 AND legacy_id IS NOT NULL")->fetchColumn();
     $n21 = (int) $pdo->query("SELECT COUNT(*) FROM meniu WHERE sectiune_id=$sid21 AND legacy_id IS NOT NULL")->fetchColumn();
     ok('2014-2020: peste 190 de intrări migrate', $n20 >= 190);
-    ok('2021-2027: 12 sintetice + 9 mutate = 21', $n21 === 21);
+    ok('2021-2027: 14 sintetice + 9 mutate + 7 în Arhivă = 30', $n21 === 30);
     // `creat` nu e neapărat egal cu totalul: dacă `meniu` are deja conținut migrat
     // (rulare pe bază reală, deja migrată), migreaza() actualizează în loc să creeze.
     // Suma creat+actualizat trebuie totuși să acopere tot, iar `creat` trebuie să
@@ -78,10 +78,17 @@ try {
     $c21 = $m->gasesteDupaLegacy(9009);
     ok('9009 Contact 2021 => doar Laura', $c21 && $c21['sablon'] === 'contact' && str_contains($c21['continut_html'], 'Manolache') && !str_contains($c21['continut_html'], 'Olteanu'));
     $u21 = $m->gasesteDupaLegacy(9008);
-    ok('9008 Utile 2021 => rețete cu imagine rescrisă', $u21 && str_contains($u21['continut_html'], 'Marinată') && str_contains($u21['continut_html'], '/fisiere/2017/08/marinata-de-peste.jpg'));
+    ok('9008 Utile 2021 => dosar cu Documente (9081) și Rețete (9082)', $u21 && $u21['tip'] === 'dosar' && (int) $m->gasesteDupaLegacy(9081)['parent_id'] === (int) $u21['id'] && (int) $m->gasesteDupaLegacy(9082)['parent_id'] === (int) $u21['id']);
+    $u21 = $m->gasesteDupaLegacy(9082);
+    ok('9082 Rețete 2021 => rețete cu imagine rescrisă', $u21 && str_contains($u21['continut_html'], 'Marinată') && str_contains($u21['continut_html'], '/fisiere/2017/08/marinata-de-peste.jpg'));
     $nou = $m->gasesteDupaLegacy(3622);
     ok('3622 mutat în 2021-2027 sub Noutăți (9001)', $nou && (int) $nou['sectiune_id'] === $sid21 && (int) $nou['parent_id'] === (int) $m->gasesteDupaLegacy(9001)['id']);
-    ok('3601 DIGICO rămâne în 2014-2020 sub Noutăți (250)', (int) $m->gasesteDupaLegacy(3601)['sectiune_id'] === $sid20);
+    $arh = $m->gasesteDupaLegacy(9005);
+    $dig = $m->gasesteDupaLegacy(3601);
+    ok('3601 DIGICO mutat în 2021-2027 sub Arhivă (9005)', $dig && (int) $dig['sectiune_id'] === $sid21 && (int) $dig['parent_id'] === (int) $arh['id'] && $dig['tip'] === 'document');
+    $arhCopii = array_map(static fn(array $c): int => (int) $c['legacy_id'], $m->copii((int) $arh['id']));
+    ok('  Arhivă 2021 are exact cei 7 copii, în ordinea cerută', $arhCopii === \App\Migrare\Harta::ARHIVA_2021_COPII);
+    ok('  3591 (Raport ex-post) rămâne în 2014-2020', (int) $m->gasesteDupaLegacy(3591)['sectiune_id'] === $sid20);
     $cons = $m->gasesteDupaLegacy(280);
     ok('280 Consultare publică => pagina din builder html (nu din post_content-ul spam)', $cons && $cons['tip'] === 'pagina' && str_contains($cons['continut_html'], 'Consultare publică') && !str_contains($cons['continut_html'], 'podcasts'));
     ok('spam eliminat > 0', $r['spam'] > 0);

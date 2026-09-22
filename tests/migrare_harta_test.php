@@ -22,6 +22,7 @@ ok('pagină goală cu copii => dosar', Harta::clasifica($item(['tip' => 'post_ty
 ok('pagină goală fără copii => sari', Harta::clasifica($item(['tip' => 'post_type', 'obiect_id' => 307]), ['id' => 307, 'titlu' => 'S', 'slug' => 's', 'continut' => ''], false, $exista)['tip'] === 'sari');
 ok('pagină inexistentă => sari', Harta::clasifica($item(['tip' => 'post_type', 'obiect_id' => 1]), null, false, $exista)['tip'] === 'sari');
 ok('sectiuneaPentru 3622 => 2021-2027', Harta::sectiuneaPentru(3622) === '2021-2027');
-ok('sectiuneaPentru 3601 => 2014-2020', Harta::sectiuneaPentru(3601) === '2014-2020');
-ok('MENIU_2021 are 9 rădăcini, Media cu 3 copii', count(Harta::MENIU_2021) === 9 && count(Harta::MENIU_2021[6]['copii']) === 3 && Harta::MENIU_2021[8]['sablon'] === 'contact');
+ok('sectiuneaPentru 579 => 2014-2020', Harta::sectiuneaPentru(579) === '2014-2020');
+ok('MENIU_2021 are 9 rădăcini, Media cu 3 copii, Utile cu 2, Arhivă înaintea lui Contact', count(Harta::MENIU_2021) === 9 && count(Harta::MENIU_2021[5]['copii']) === 3 && Harta::MENIU_2021[6]['legacy'] === 9008 && count(Harta::MENIU_2021[6]['copii']) === 2 && Harta::MENIU_2021[7]['legacy'] === 9005 && Harta::MENIU_2021[8]['sablon'] === 'contact');
+ok('sectiuneaPentru 3601 (Arhivă) => 2021-2027', Harta::sectiuneaPentru(3601) === '2021-2027' && Harta::sectiuneaPentru(3598) === '2021-2027');
 final_test();

@@ -38,6 +38,7 @@ function migreaza(array $ctx, bool $verbose = true): array
     foreach ($items as $it) {
         $copii[$it['parent']][] = $it;
     }
+    $itemDupaId = array_column($items, null, 'id');
 
     $upsert = function (int $legacyId, array $date) use ($meniu, $pdo, &$rap): int {
         $ex = $meniu->gasesteDupaLegacy($legacyId);
@@ -106,7 +107,7 @@ function migreaza(array $ctx, bool $verbose = true): array
     $root = (string) $ctx['root'];
     $parcurge = function (array $lista, ?int $parintNou, array &$arboreNod) use (&$parcurge, $copii, $legacy, $fisiere, $meniu, $root, $existaFisier, $upsert, $paginaHtml, $adaugaGalerii, $adaugaExtern, $sid20, &$rap): void {
         foreach ($lista as $it) {
-            if (in_array($it['id'], Harta::SET_2021, true)) {
+            if (in_array($it['id'], Harta::SET_2021, true) || in_array($it['id'], Harta::ARHIVA_2021_COPII, true)) {
                 continue;
             }
             if ($it['tip'] === 'post_type' && in_array($it['obiect_id'], Harta::PAGINI_SARITE, true)) {
@@ -174,17 +175,35 @@ function migreaza(array $ctx, bool $verbose = true): array
     foreach (Harta::MENIU_2021 as $def) {
         $date = ['sectiune_id' => $sid21, 'parent_id' => null, 'titlu' => $def['titlu'], 'tip' => $def['tip'],
                  'fisier_id' => null, 'continut_html' => '', 'url' => '', 'vizibil' => 1, 'sablon' => $def['sablon'] ?? 'standard'];
-        if ($def['legacy'] === Harta::UTILE_2021) {
-            $date['continut_html'] = $utileHtml;
-        }
         if ($def['legacy'] === Harta::CONTACT_2021) {
             $date['continut_html'] = Html::curata((string) file_get_contents($ctx['root'] . '/database/data/contact-2021-2027.html'));
         }
         $id = $upsert($def['legacy'], $date);
         $nod = ['id' => $id, 'copii' => []];
         foreach ($def['copii'] ?? [] as $c) {
+            // Fostul conținut al paginii „Utile” (252) ajunge în pagina copil „Rețete”.
+            $html = $c['legacy'] === Harta::RETETE_2021 ? $utileHtml : '';
             $nod['copii'][] = ['id' => $upsert($c['legacy'], ['sectiune_id' => $sid21, 'parent_id' => $id, 'titlu' => $c['titlu'], 'tip' => $c['tip'],
-                                                             'fisier_id' => null, 'continut_html' => '', 'url' => '', 'vizibil' => 1, 'sablon' => 'standard']), 'copii' => []];
+                                                             'fisier_id' => null, 'continut_html' => $html, 'url' => '', 'vizibil' => 1, 'sablon' => 'standard']), 'copii' => []];
+        }
+        if ($def['legacy'] === Harta::ARHIVA_2021) {
+            // Intrări din Noutăți 2014-2020 mutate în Arhivă, în ordinea din `ARHIVA_2021_COPII`.
+            foreach (Harta::ARHIVA_2021_COPII as $lid) {
+                $it = $itemDupaId[$lid] ?? null;
+                if ($it === null) {
+                    $rap['sarit'][] = "$lid (Arhivă 2021): lipseste din meniul vechi";
+                    continue;
+                }
+                $cls = Harta::clasifica($it, null, false, $existaFisier);
+                if ($cls['tip'] === 'sari') {
+                    $rap['sarit'][] = "{$it['id']} „{$it['titlu']}”: {$cls['motiv']}";
+                    continue;
+                }
+                $fid = $cls['tip'] === 'document' ? (int) $fisiere->gasesteDupaLegacy($cls['cale'])['id'] : null;
+                $adaugaExtern($cls['url']);
+                $nod['copii'][] = ['id' => $upsert($it['id'], ['sectiune_id' => $sid21, 'parent_id' => $id, 'titlu' => $it['titlu'], 'tip' => $cls['tip'],
+                                                              'fisier_id' => $fid, 'continut_html' => '', 'url' => $cls['url'] ?? '', 'vizibil' => 1, 'sablon' => 'standard']), 'copii' => []];
+            }
         }
         if ($def['legacy'] === Harta::NOUTATI_2021 || $def['legacy'] === Harta::STRATEGIE_2021) {
             $tinta = $def['legacy'] === Harta::NOUTATI_2021 ? 250 : 204;

@@ -6,7 +6,7 @@
     <span class="fp-doc__icon" aria-hidden="true">{% if n.tip == 'document' %}{{ e|upper }}{% else %}{% include '_icon.twig' with {'nume': n.tip} only %}{% endif %}</span>
     <div class="fp-doc__text">
         {% if n.href == '' %}<span class="fp-doc__titlu is-inactiv">{{ n.titlu }}</span>
-        {% else %}<a class="fp-doc__titlu" href="{{ n.href }}"{% if n.extern %} target="_blank" rel="noopener noreferrer"{% endif %}>{{ n.titlu }}</a>{% endif %}
+        {% else %}<a class="fp-doc__titlu" href="{{ n.href }}"{% if n.fila_noua %} target="_blank" rel="noopener noreferrer"{% endif %}>{{ n.titlu }}</a>{% endif %}
         <span class="fp-doc__meta">
             {%- if n.tip == 'document' and n.fisier_cale %}{{ e|upper }} · {{ marime(n.fisier_marime) }}
             {%- elseif n.tip == 'dosar' %}{{ n.copii|length }} {{ n.copii|length == 1 ? 'intrare' : 'intrări' }}
