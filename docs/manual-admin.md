@@ -1,11 +1,11 @@
 # Manualul administratorului — site-ul FLAG Prahova
 
 Acest manual e scris pentru colegii care actualizează site-ul, nu pentru tehnicieni. Adresa administrării este
-**https://flagprahova.ro/admin**.
+**https://flagprahova.ro/admin_flag**.
 
 ## 1. Intrarea în administrare
 
-1. Deschideți https://flagprahova.ro/admin.
+1. Deschideți https://flagprahova.ro/admin_flag.
 2. Scrieți **Email** și **Parolă**, apoi apăsați **Intră**.
 3. Dacă ați uitat parola, apăsați **Ți-ai uitat parola?**, scrieți adresa contului și apăsați **Trimite link**.
    Primiți pe email un link **valabil 30 de minute**; din el vă alegeți o parolă nouă (minimum 10 caractere).

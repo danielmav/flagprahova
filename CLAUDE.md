@@ -2,7 +2,7 @@
 
 Slim 4 + Twig + PDO, PHP ≥ 8.1, fără build step; Bootstrap/Quill/SortableJS vendorate în `assets/vendor/`.
 Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`. Planuri: `docs/superpowers/plans/`.
-Stadiu: LANSAT în producție pe `https://flagprahova.ro/` la 2026-09-23 (planurile 1–4 mergeuite în `main`; staging-ul `/nou` a fost mutat în rădăcină conform runbook §C, `docs/runbook-lansare.md`; baza `flagprah_nou`, deploy prin cPanel Git cu `DEPLOYPATH=public_html`, `APP_INDEXABLE=true`). Situl WP vechi e șters (backup la Daniel). Rămâne: Google Search Console (runbook C.8) și predarea (§D).
+Stadiu: LANSAT în producție pe `https://flagprahova.ro/` la 2026-09-23 (planurile 1–4 mergeuite în `main`; staging-ul `/nou` a fost mutat în rădăcină conform runbook §C, `docs/runbook-lansare.md`; baza `flagprah_nou`, deploy prin cPanel Git cu `DEPLOYPATH=public_html`, `APP_INDEXABLE=true`, `ADMIN_PATH=admin_flag` → administrarea e la `/admin_flag`, NU `/admin`). Situl WP vechi e șters (backup la Daniel). Rămâne: Google Search Console (runbook C.8) și predarea (§D).
 Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO) sunt în `~/.claude/CLAUDE.md`.
 
 ## Server / deploy
