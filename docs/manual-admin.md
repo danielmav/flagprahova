@@ -1,8 +1,7 @@
-# Manualul administratorului — situl FLAG Prahova
+# Manualul administratorului — site-ul FLAG Prahova
 
-Acest manual e scris pentru colegii care actualizează situl, nu pentru tehnicieni. Adresa administrării este
-**https://flagprahova.ro/admin**. *Până la lansare, situl stă temporar la adresa cu `/nou` în ea:
-https://flagprahova.ro/nou/admin — după lansare folosiți adresa fără `/nou`.*
+Acest manual e scris pentru colegii care actualizează site-ul, nu pentru tehnicieni. Adresa administrării este
+**https://flagprahova.ro/admin**.
 
 ## 1. Intrarea în administrare
 
@@ -12,12 +11,12 @@ https://flagprahova.ro/nou/admin — după lansare folosiți adresa fără `/nou
    Primiți pe email un link **valabil 30 de minute**; din el vă alegeți o parolă nouă (minimum 10 caractere).
 4. După 5 încercări greșite de pe același calculator apare mesajul „Prea multe încercări. Așteaptă 15 minute.” —
    așteptați 15 minute și reîncercați.
-5. În bara de sus aveți **Vezi situl** (deschide situl public într-o filă nouă) și **Ieșire**.
+5. În bara de sus aveți **Vezi site-ul** (deschide site-ul public într-o filă nouă) și **Ieșire**.
 6. În stânga e meniul administrării: **Meniu**, **Fișiere**, **Setări**, **Utilizatori**, **Mesaje**.
 
-## 2. Cum e organizat situl
+## 2. Cum e organizat site-ul
 
-- Situl are două perioade: **FLAG Prahova 2021-2027** și **FLAG Prahova 2014-2020**, fiecare cu meniul ei.
+- Site-ul are două perioade: **FLAG Prahova 2021-2027** și **FLAG Prahova 2014-2020**, fiecare cu meniul ei.
   Le alegeți din panoul de start sau din filele de sus ale paginii **Meniu**.
 - **Meniul este conținutul.** Fiecare intrare din meniu este, după **Tip**:
   - **Document (link către un fișier)** — un PDF, Word etc. 📎
@@ -41,7 +40,7 @@ https://flagprahova.ro/nou/admin — după lansare folosiți adresa fără `/nou
      luați-l de pe calculator și apăsați **Încarcă**; apoi apăsați **Alege** pe rândul lui.
 6. Verificați în dreapta **Se află sub** (dosarul în care intră) și bifa **Vizibil pe site**, apoi **Salvează**.
 7. Se acceptă: pdf, doc, docx, xls, xlsx, ppt, pptx, odt, jpg, png, webp, zip — **maximum 50 MB fiecare**.
-8. Documentul apare: în meniul sitului (sub dosarul ales), în lista de pe pagina dosarului și, dacă l-ați pus în
+8. Documentul apare: în meniul site-ului (sub dosarul ales), în lista de pe pagina dosarului și, dacă l-ați pus în
    „Noutăți”, printre ultimele 3 noutăți de pe pagina de acasă a perioadei.
 
 ## 4. Ordinea și mutarea
@@ -113,7 +112,7 @@ https://flagprahova.ro/nou/admin — după lansare folosiți adresa fără `/nou
 3. Răspundeți dând click pe adresa de email a expeditorului.
 4. Mesajele mai vechi se văd din numerele de pagină de sub tabel.
 
-## 11. Ce NU face situl
+## 11. Ce NU face site-ul
 
 - Nu are statistici de vizitare (pentru asta se folosește un serviciu separat, dacă se dorește).
 - Nu păstrează versiuni și nu are „anulează”: ce salvați înlocuiește ce era înainte.
