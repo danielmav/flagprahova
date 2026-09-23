@@ -1,17 +1,17 @@
 ---
-# cPanel Git™ Version Control — deploy DECUPLAT (staging).
+# cPanel Git™ Version Control — deploy DECUPLAT (producție, din 2026-09-23).
 # Repo-ul (cu .git, docs/, database/, etc.) trăiește în ~/repositories/flagprahova,
 # ÎN AFARA docroot-ului. La „Deploy HEAD Commit" se face composer install în repo și
-# se copiază în public_html/nou DOAR fișierele runtime. Fișierele interne (docs/, database/,
+# se copiază în public_html DOAR fișierele runtime. Fișierele interne (docs/, database/,
 # .git, composer.*, .cpanel.yml, .env.example) NU ajung niciodată în docroot.
 #
-# STAGING: DEPLOYPATH e public_html/nou. La lansare se schimbă în public_html.
+# Staging-ul (public_html/nou) a fost mutat în rădăcină la lansare (runbook §C).
 # .env și storage/ există DOAR în docroot și nu se ating la deploy (nu-s în listele de mai jos).
 # Setup DB inițial (migrate/seed/create_admin) se face manual, o singură dată, din repo.
 deployment:
   tasks:
     - export REPO=/home/flagprah/repositories/flagprahova
-    - export DEPLOYPATH=/home/flagprah/public_html/nou
+    - export DEPLOYPATH=/home/flagprah/public_html
     # PHP de CLI: pe CloudLinux/CageFS binarul ea-php83 NU e vizibil (verificat 2026-09-19),
     # asa ca se cauta in ordine; ultima varianta e `php` din PATH (versiunea din PHP Selector).
     - PHP=php; for p in /opt/cpanel/ea-php83/root/usr/bin/php /opt/alt/php83/usr/bin/php /usr/local/bin/php /usr/bin/php; do if [ -x "$p" ]; then PHP="$p"; break; fi; done; export PHP; echo "PHP folosit=$PHP"; $PHP -v | head -1
