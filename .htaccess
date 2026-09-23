@@ -16,7 +16,7 @@
     RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
     # www.flagprahova.ro -> flagprahova.ro (URL canonic, un singur host indexat)
-    RewriteCond %{HTTP_HOST} ^www.(.+)$ [NC]
+    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
     RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
 
     # Block direct access to application internals
