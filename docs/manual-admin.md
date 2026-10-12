@@ -42,6 +42,8 @@ Acest manual e scris pentru colegii care actualizează site-ul, nu pentru tehnic
 7. Se acceptă: pdf, doc, docx, xls, xlsx, ppt, pptx, odt, jpg, png, webp, zip — **maximum 50 MB fiecare**.
 8. Documentul apare: în meniul site-ului (sub dosarul ales), în lista de pe pagina dosarului și, dacă l-ați pus în
    „Noutăți”, printre ultimele 3 noutăți de pe pagina de acasă a perioadei.
+9. Într-un dosar, intrarea nou adăugată apare **prima** (cea mai recentă sus). Dacă o vreți în altă poziție,
+   o mutați prin tragere (vezi mai jos).
 
 ## 4. Ordinea și mutarea
 

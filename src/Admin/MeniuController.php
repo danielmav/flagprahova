@@ -173,7 +173,9 @@ final class MeniuController
         if ($date['tip'] !== 'pagina') { $date['continut_html'] = ''; $date['sablon'] = 'standard'; }
 
         if ($id === null) {
-            $id = $this->meniu->creeaza($date);
+            // Într-un dosar, intrarea nouă apare prima (cea mai recentă sus); la
+            // nivelul 1 rămâne la coadă, ca să nu se așeze înaintea lui „Acasă”.
+            $id = $this->meniu->creeaza($date, $date['parent_id'] !== null);
             $this->flash('ok', 'Intrare adăugată.');
         } else {
             $this->meniu->actualizeaza($id, $date);

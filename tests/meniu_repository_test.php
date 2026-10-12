@@ -26,6 +26,14 @@ try {
     ok('slug duplicat primește sufix -2', $repo->gaseste($d)['slug'] === $slugBaza . '-2');
     ok('ordine crește între frați', (int) $repo->gaseste($d)['ordine'] === (int) $repo->gaseste($c)['ordine'] + 1);
 
+    // $prima = true: intrarea nouă trece înaintea fraților, care coboară cu o poziție
+    $e = $repo->creeaza(['sectiune_id' => $sid, 'parent_id' => $b, 'titlu' => "Cea mai nouă $marca", 'slug' => '', 'tip' => 'dosar'], true);
+    $creati[] = $e;
+    $idsCopii = array_map(static fn (array $r): int => (int) $r['id'], $repo->copii($b));
+    ok('creeaza($prima): intrarea nouă e prima, frații își păstrează ordinea', $idsCopii === [$e, $c, $d]);
+    $repo->sterge($e);
+    $creati = [$a, $b, $c, $d];
+
     $arb = $repo->arbore($sid);
     $nodA = null;
     foreach ($arb as $n) { if ((int) $n['id'] === $a) { $nodA = $n; } }

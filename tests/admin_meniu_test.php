@@ -59,6 +59,12 @@ try {
     ok('document creat sub dosar', $doc && (int) $doc['parent_id'] === (int) $dosar['id'] && (int) $doc['fisier_id'] === $fid);
     $ids[] = (int) $doc['id'];
 
+    // a doua intrare din același dosar apare PRIMA (cea mai nouă sus); cea veche coboară
+    cerere('POST', '/admin/meniu/salveaza', ['_csrf' => 'abc', 'sectiune_id' => $sid, 'parent_id' => $dosar['id'], 'titlu' => "Comunicat nou $marca", 'tip' => 'document', 'fisier_id' => $fid]);
+    $copii = $pdo->query('SELECT id, titlu FROM meniu WHERE parent_id = ' . (int) $dosar['id'] . ' ORDER BY ordine, id')->fetchAll();
+    ok('intrarea nouă din dosar e prima', count($copii) === 2 && $copii[0]['titlu'] === "Comunicat nou $marca" && (int) $copii[1]['id'] === (int) $doc['id']);
+    $pdo->exec('DELETE FROM meniu WHERE parent_id = ' . (int) $dosar['id'] . ' AND id <> ' . (int) $doc['id']);
+
     // editare
     $r = cerere('GET', '/admin/meniu/' . $doc['id']);
     ok('GET formular editare => 200 cu titlul', $r->getStatusCode() === 200 && str_contains(corp($r), "Comunicat $marca"));

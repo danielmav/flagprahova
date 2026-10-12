@@ -156,14 +156,26 @@ final class Repository
         return $baza . '-' . bin2hex(random_bytes(3));
     }
 
-    public function creeaza(array $date): int
+    /**
+     * `$prima = true` pune intrarea înaintea fraților ei (cea mai nouă apare
+     * prima); implicit se adaugă la coadă, cum are nevoie migrarea.
+     */
+    public function creeaza(array $date, bool $prima = false): int
     {
         $sid    = (int) $date['sectiune_id'];
         $parent = isset($date['parent_id']) && $date['parent_id'] !== '' && $date['parent_id'] !== null ? (int) $date['parent_id'] : null;
         $slug   = $this->slugUnic($sid, ($date['slug'] ?? '') !== '' ? (string) $date['slug'] : (string) $date['titlu']);
-        $st = $this->pdo->prepare('SELECT COALESCE(MAX(ordine), -1) + 1 FROM meniu WHERE sectiune_id = :s AND ' . ($parent === null ? 'parent_id IS NULL' : 'parent_id = :p'));
-        $st->execute($parent === null ? ['s' => $sid] : ['s' => $sid, 'p' => $parent]);
-        $ordine = (int) $st->fetchColumn();
+        $frati  = 'sectiune_id = :s AND ' . ($parent === null ? 'parent_id IS NULL' : 'parent_id = :p');
+        $parFrati = $parent === null ? ['s' => $sid] : ['s' => $sid, 'p' => $parent];
+        if ($prima) {
+            // `ordine` e UNSIGNED: facem loc pe poziția 0 împingând frații cu o poziție.
+            $this->pdo->prepare('UPDATE meniu SET ordine = ordine + 1 WHERE ' . $frati)->execute($parFrati);
+            $ordine = 0;
+        } else {
+            $st = $this->pdo->prepare('SELECT COALESCE(MAX(ordine), -1) + 1 FROM meniu WHERE ' . $frati);
+            $st->execute($parFrati);
+            $ordine = (int) $st->fetchColumn();
+        }
 
         $st = $this->pdo->prepare('INSERT INTO meniu (sectiune_id, parent_id, ordine, titlu, slug, tip, continut_html, fisier_id, url, sablon, vizibil, publicat_la, legacy_id)
             VALUES (:s, :p, :o, :t, :sl, :tip, :c, :f, :u, :sab, :v, :pub, :lg)');
