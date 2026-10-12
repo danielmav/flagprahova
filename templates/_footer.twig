@@ -44,6 +44,7 @@
         <div class="fp-footer__bottom d-flex flex-wrap justify-content-between gap-2">
             <span>© {{ 'now'|date('Y') }} Asociația FLAG Prahova</span>
             <span>Grup de acțiune locală pentru pescuit și acvacultură</span>
+            {% if app.ga4_id %}<button type="button" class="fp-footer__cookie" data-consent-deschide>Setări cookie-uri</button>{% endif %}
         </div>
     </div>
 </footer>

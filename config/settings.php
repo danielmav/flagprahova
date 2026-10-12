@@ -9,6 +9,8 @@ return [
         'base_path' => rtrim($_ENV['BASE_PATH'] ?? '', '/'),
         'name'      => 'FLAG Prahova',
         'indexable' => filter_var($_ENV['APP_INDEXABLE'] ?? true, FILTER_VALIDATE_BOOL),
+        // Google Analytics 4: gol (dev/staging) => fără banner de cookie-uri și fără script.
+        'ga4_id'    => preg_match('/^G-[A-Z0-9]{4,20}$/', (string) ($_ENV['GA4_ID'] ?? '')) ? (string) $_ENV['GA4_ID'] : '',
     ],
     'admin' => [
         'path' => '/' . trim($_ENV['ADMIN_PATH'] ?? 'admin', '/'),

@@ -764,6 +764,14 @@ img { max-width: 100%; }
   border-top: 1px solid rgba(255, 255, 255, .1);
   font-size: 13px;
 }
+.fp-footer__cookie {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+}
 
 /* --- Conținutul din editor ---------------------------------------------- */
 /* `overflow-wrap`: conținutul migrat din WP are cuvinte/URL-uri lungi care, pe

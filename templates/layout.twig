@@ -45,5 +45,6 @@
 </div>
 <script src="{{ base }}/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="{{ base }}/assets/js/site.js"></script>
+{% if app.ga4_id %}{% include '_consent.twig' %}{% endif %}
 </body>
 </html>

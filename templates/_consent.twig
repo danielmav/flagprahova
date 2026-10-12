@@ -1,0 +1,12 @@
+{# Banner de cookie-uri pentru Google Analytics. Scriptul Google NU e în pagină:
+   îl încarcă `consent.js` abia după „Accept" (alegerea se ține în localStorage). #}
+<div class="fp-consent position-fixed bottom-0 start-0 end-0 z-3 bg-white border-top shadow-lg" role="region" aria-label="Cookie-uri" hidden>
+    <div class="container py-3 d-flex flex-column flex-md-row align-items-md-center gap-3">
+        <p class="mb-0 small flex-grow-1">Folosim cookie-uri Google Analytics ca să vedem, anonim, cum este folosit site-ul. Se activează doar cu acordul dumneavoastră.</p>
+        <div class="d-flex gap-2 flex-shrink-0">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-consent="nu">Refuz</button>
+            <button type="button" class="btn btn-primary btn-sm" data-consent="da">Accept</button>
+        </div>
+    </div>
+</div>
+<script src="{{ base }}/assets/js/consent.js" data-ga4="{{ app.ga4_id }}"></script>
