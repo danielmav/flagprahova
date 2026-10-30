@@ -3,6 +3,7 @@
 Slim 4 + Twig + PDO, PHP ≥ 8.1, fără build step; Bootstrap/Quill/SortableJS vendorate în `assets/vendor/`.
 Spec: `docs/superpowers/specs/2026-09-18-flagprahova-site-nou-design.md`. Planuri: `docs/superpowers/plans/`.
 Stadiu: LANSAT în producție pe `https://flagprahova.ro/` la 2026-09-23 (planurile 1–4 mergeuite în `main`; staging-ul `/nou` a fost mutat în rădăcină conform runbook §C, `docs/runbook-lansare.md`; baza `flagprah_nou`, deploy prin cPanel Git cu `DEPLOYPATH=public_html`, `APP_INDEXABLE=true`, `ADMIN_PATH=admin_flag` → administrarea e la `/admin_flag`, NU `/admin`). Site-ul WP vechi e șters (backup la Daniel). Search Console + GA4 făcute (2026-10-12). Rămâne: predarea (§D: manual admin `docs/manual-admin.md`, cont client).
+**Producția e sursa de adevăr pentru date** (clientul editează din admin): baza locală e o copie care poate fi în urmă — pentru date actuale exportă din phpMyAdmin; schimbările de date pe server se fac cu SQL idempotent după `legacy_id`/`cale`, niciodată prin re-migrare sau prin suprascriere cu baza locală.
 Cod: `src/Public` (controllere publice + `Context`), `src/Admin` (controllere, auth, throttle), `src/Meniu` (arbore, galerii), `src/Fisiere` (upload, miniaturi), `src/Migrare` (Legacy/Harta/Curata, folosite de `database/migrate_wp.php`), `src/Setari`, `src/Support` (Html). Rute în `src/Routes.php`, pornire în `src/Bootstrap.php`.
 Reguli generale pentru orice proiect web (Bootstrap, Open Graph, pretty URL, SEO) sunt în `~/.claude/CLAUDE.md`.
 
