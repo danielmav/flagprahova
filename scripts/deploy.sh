@@ -8,7 +8,7 @@
 # citite literal (parola FTP are caractere speciale; NU se face `source`).
 # Rulare: bash scripts/deploy.sh            (din rădăcina proiectului, în Git Bash)
 set -euo pipefail
-export MSYS_NO_PATHCONV=1
+# MSYS_NO_PATHCONV doar pe apelul API: exportat global strică `curl -o /dev/null` (exit 23).
 
 ENV_FILE="${USERPROFILE:-$HOME}/.secrets/flagprahova.env"
 while IFS= read -r linie || [ -n "$linie" ]; do
@@ -25,7 +25,7 @@ uapi() { # uapi Modul/functie [param=valoare ...]  → JSON pe stdout
   local fn=$1; shift
   local args=()
   for a in "$@"; do args+=(--data-urlencode "$a"); done
-  curl -s --max-time 120 -G -H "Authorization: cpanel $CPANEL_USER:$CPANEL_TOKEN" \
+  MSYS_NO_PATHCONV=1 curl -s --max-time 120 -G -H "Authorization: cpanel $CPANEL_USER:$CPANEL_TOKEN" \
     "https://$CPANEL_HOST:2083/execute/$fn" "${args[@]}"
 }
 camp() { php -r '$j=json_decode(stream_get_contents(STDIN),true); $v=$j; foreach(array_slice($argv,1) as $k){ $v=is_array($v)&&array_key_exists($k,$v)?$v[$k]:null; } echo is_scalar($v)?$v:json_encode($v);' "$@"; }
