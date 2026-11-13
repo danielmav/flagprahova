@@ -96,6 +96,9 @@ final class Context
                     default    => $this->base() . '/' . $sectiune['slug'] . '/' . $n['slug'],
                 };
                 $n['copii'] = $decoreaza($n['copii']);
+                // Un ghid (dosar cu întrebări) e link simplu în meniu: anexele lui se
+                // văd pe pagina ghidului, nu într-un submeniu. `copii` rămâne întreg.
+                $n['submeniu'] = $n['copii'] !== [] && !($n['tip'] === 'dosar' && !empty($n['comentarii']));
             }
             unset($n);
             return $lista;

@@ -74,7 +74,7 @@ final class Repository
      */
     public function arborePublic(int $sectiuneId): array
     {
-        $st = $this->pdo->prepare('SELECT m.id, m.parent_id, m.ordine, m.titlu, m.slug, m.tip, m.url, m.sablon, m.vizibil, m.publicat_la, m.modificat_la,
+        $st = $this->pdo->prepare('SELECT m.id, m.parent_id, m.ordine, m.titlu, m.slug, m.tip, m.url, m.sablon, m.vizibil, m.publicat_la, m.modificat_la, m.comentarii,
                 f.cale AS fisier_cale, f.marime AS fisier_marime, f.mime AS fisier_mime
             FROM meniu m LEFT JOIN fisiere f ON f.id = m.fisier_id
             WHERE m.sectiune_id = :s ORDER BY m.ordine, m.id');

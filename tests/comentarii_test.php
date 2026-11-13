@@ -23,6 +23,16 @@ try {
     ok('dosar cu comentarii: secțiunea și formularul', str_contains($c, 'id="intrebari"') && str_contains($c, "action=\"/2021-2027/ghid-$m/intrebari#intrebari\"") && str_contains($c, 'name="acord"') && str_contains($c, 'name="website"'));
     ok('dosar fără comentarii: fără secțiune', !str_contains(corp(cerere('GET', "/2021-2027/dosar-$m")), 'id="intrebari"'));
 
+    // Meniu: ghidul (dosar cu comentarii) e link simplu, fără submeniu; dosarul obișnuit își păstrează submeniul.
+    $copil = $pdo->prepare('INSERT INTO meniu (sectiune_id, parent_id, ordine, titlu, slug, tip) VALUES (:s, :p, 0, :t, :sl, "pagina")');
+    $copil->execute(['s' => $s['id'], 'p' => $ghid, 't' => "Anexa $m", 'sl' => "anexa-$m"]);
+    $ids[] = (int) $pdo->lastInsertId();
+    $copil->execute(['s' => $s['id'], 'p' => $ids[1], 't' => "Fiu $m", 'sl' => "fiu-$m"]);
+    $ids[] = (int) $pdo->lastInsertId();
+    $c = corp(cerere('GET', '/2021-2027/'));
+    ok('meniu: ghidul fără submeniu, dosarul obișnuit cu submeniu', !str_contains($c, "Anexa $m") && str_contains($c, "Fiu $m"));
+    ok('pagina ghidului listează în continuare anexa', str_contains(corp(cerere('GET', $url)), "Anexa $m"));
+
     $tok = (string) (time() - 10) . '.' . hash_hmac('sha256', (string) (time() - 10), 'abc');
     $bun = ['_csrf' => 'abc', '_t' => $tok, 'website' => '', 'nume' => "Ana $m", 'email' => "ana-$m@example.com", 'mesaj' => "Intrebare $m despre eligibilitate?", 'acord' => '1'];
     $n = fn() => (int) $pdo->query("SELECT COUNT(*) FROM comentarii WHERE meniu_id = $ghid")->fetchColumn();
