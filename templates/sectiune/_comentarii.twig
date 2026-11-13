@@ -1,0 +1,60 @@
+{# Întrebări și comentarii la un ghid: firul aprobat + formularul. Mesajele noi apar
+   doar după aprobarea din admin; emailul nu se afișează niciodată. #}
+<section class="fp-comentarii mt-5" id="intrebari" aria-labelledby="intrebari-titlu">
+    <span class="fp-eyebrow">Consultare publică</span>
+    <h2 class="h4" id="intrebari-titlu">Întrebări și comentarii{% if comentarii is not empty %} <span class="fp-comentarii__nr">({{ comentarii|length }})</span>{% endif %}</h2>
+    <p class="fp-comentarii__intro">Ai o întrebare sau o propunere despre acest ghid? Scrie-ne mai jos. Mesajele se publică pe această pagină după verificare, iar răspunsurile FLAG Prahova apar sub fiecare întrebare, ca să le vadă toți cei interesați.</p>
+
+    {% if comentarii is not empty %}
+    <ol class="fp-comentarii__lista">
+        {% for c in comentarii %}
+        <li class="fp-comentariu" id="intrebare-{{ c.id }}">
+            <p class="fp-comentariu__autor"><strong>{{ c.nume }}</strong> · <time datetime="{{ c.trimis_la|date('Y-m-d') }}">{{ c.trimis_la|date('d.m.Y') }}</time></p>
+            <div class="fp-comentariu__text">{{ c.mesaj|nl2br }}</div>
+            {% if c.raspuns %}
+            <div class="fp-comentariu__raspuns">
+                <p class="fp-comentariu__autor"><strong>Răspuns FLAG Prahova</strong>{% if c.raspuns_la %} · <time datetime="{{ c.raspuns_la|date('Y-m-d') }}">{{ c.raspuns_la|date('d.m.Y') }}</time>{% endif %}</p>
+                <div class="fp-comentariu__text">{{ c.raspuns|nl2br }}</div>
+            </div>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ol>
+    {% endif %}
+
+    <div class="fp-form fp-form--contact mt-4">
+        <h3 class="h5">Trimite o întrebare sau un comentariu</h3>
+        {% if trimis %}<div class="alert alert-success" role="status">Mesajul a fost primit și va fi publicat după verificare. Îți mulțumim!</div>{% endif %}
+        {% if form.erori._ is defined %}<div class="alert alert-danger" role="alert">{{ form.erori._ }}</div>{% endif %}
+        <form method="post" action="{{ base }}/{{ sectiune.slug }}/{{ nod.slug }}/intrebari#intrebari" novalidate>
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
+            <input type="hidden" name="_t" value="{{ time_token }}">
+            <div class="fp-hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label" for="q-nume">Nume <span class="text-muted small">(se publică)</span></label>
+                    <input class="form-control{% if form.erori.nume is defined %} is-invalid{% endif %}" id="q-nume" name="nume" type="text" value="{{ form.valori.nume|default('') }}" required maxlength="120" autocomplete="name">
+                    {% if form.erori.nume is defined %}<div class="invalid-feedback">{{ form.erori.nume }}</div>{% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="q-email">Email <span class="text-muted small">(nu se publică)</span></label>
+                    <input class="form-control{% if form.erori.email is defined %} is-invalid{% endif %}" id="q-email" name="email" type="email" value="{{ form.valori.email|default('') }}" required maxlength="190" autocomplete="email">
+                    {% if form.erori.email is defined %}<div class="invalid-feedback">{{ form.erori.email }}</div>{% endif %}
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="q-mesaj">Întrebarea sau comentariul tău</label>
+                    <textarea class="form-control{% if form.erori.mesaj is defined %} is-invalid{% endif %}" id="q-mesaj" name="mesaj" rows="5" required maxlength="5000">{{ form.valori.mesaj|default('') }}</textarea>
+                    {% if form.erori.mesaj is defined %}<div class="invalid-feedback">{{ form.erori.mesaj }}</div>{% endif %}
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
+                        <input class="form-check-input{% if form.erori.acord is defined %} is-invalid{% endif %}" type="checkbox" id="q-acord" name="acord" value="1"{% if form.valori.acord|default(false) %} checked{% endif %} required>
+                        <label class="form-check-label small" for="q-acord">Sunt de acord ca numele și mesajul meu să fie publicate pe această pagină după verificare. Adresa de email nu se publică; Asociația FLAG Prahova o folosește doar ca să mă contacteze în legătură cu mesajul.</label>
+                        {% if form.erori.acord is defined %}<div class="invalid-feedback">{{ form.erori.acord }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="col-12"><button class="fp-btn" type="submit">Trimite</button></div>
+            </div>
+        </form>
+    </div>
+</section>

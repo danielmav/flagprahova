@@ -10,7 +10,7 @@ $coloane = function (string $tabel) use ($pdo): array {
 };
 $asteptat = [
     'sectiuni'        => ['id','slug','titlu','subtitlu','acasa_html','hero_imagine','ordine'],
-    'meniu'           => ['id','sectiune_id','parent_id','ordine','titlu','slug','tip','continut_html','fisier_id','url','sablon','vizibil','publicat_la','legacy_id','creat_la','modificat_la'],
+    'meniu'           => ['id','sectiune_id','parent_id','ordine','titlu','slug','tip','continut_html','fisier_id','url','sablon','vizibil','publicat_la','comentarii','legacy_id','creat_la','modificat_la'],
     'fisiere'         => ['id','nume_afisat','cale','mime','marime','incarcat_la','incarcat_de','legacy_url'],
     'galerie_imagini' => ['id','meniu_id','fisier_id','ordine','legenda'],
     'utilizatori'     => ['id','email','nume','parola_hash','ultimul_login','creat_la'],
@@ -18,6 +18,7 @@ $asteptat = [
     'login_incercari' => ['id','ip_hash','scope','la'],
     'setari'          => ['cheie','valoare'],
     'mesaje_contact'  => ['id','sectiune_id','nume','email','mesaj','ip_hash','trimis_la','email_trimis'],
+    'comentarii'      => ['id','meniu_id','nume','email','mesaj','stare','raspuns','raspuns_la','ip_hash','trimis_la','email_trimis'],
 ];
 foreach ($asteptat as $tabel => $cols) {
     $are = $coloane($tabel);

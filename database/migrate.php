@@ -19,6 +19,7 @@ echo "migrate: $n instrucțiuni rulate pe {$settings['db']['name']}\n";
 // pune pe bazele existente, deci le adăugăm aici dacă lipsesc (idempotent).
 $adauga = [
     ['meniu', 'publicat_la', 'ALTER TABLE meniu ADD COLUMN publicat_la DATE NULL AFTER vizibil'],
+    ['meniu', 'comentarii', 'ALTER TABLE meniu ADD COLUMN comentarii TINYINT(1) NOT NULL DEFAULT 0 AFTER publicat_la'],
 ];
 $st = $pdo->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c');
 foreach ($adauga as [$tabel, $coloana, $alter]) {

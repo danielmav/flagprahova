@@ -876,6 +876,35 @@ img { max-width: 100%; }
 
 .fp-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
+/* --- Întrebări și comentarii la ghiduri ---------------------------------- */
+.fp-comentarii { padding-top: 2.5rem; border-top: 1px solid var(--fp-border); scroll-margin-top: 6rem; }
+
+.fp-comentarii .fp-eyebrow { margin-bottom: .5rem; }
+
+.fp-comentarii__nr { color: var(--fp-muted); font-weight: 400; }
+
+.fp-comentarii__intro { color: var(--fp-muted); }
+
+.fp-comentarii__lista { margin: 1.5rem 0 0; padding: 0; list-style: none; }
+
+.fp-comentariu { padding: 1.25rem 0; border-bottom: 1px solid var(--fp-border); }
+
+.fp-comentariu:first-child { padding-top: 0; }
+
+.fp-comentariu__autor { margin-bottom: .35rem; font-size: 14px; color: var(--fp-muted); }
+
+.fp-comentariu__autor strong { color: var(--fp-navy); }
+
+.fp-comentariu__text { overflow-wrap: anywhere; }
+
+.fp-comentariu__raspuns {
+  margin: 1rem 0 0 1.25rem;
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--fp-accent);
+  border-radius: 0 12px 12px 0;
+  background: var(--fp-blue-soft);
+}
+
 /* --- Pagina interioară --------------------------------------------------- */
 /* `padding-block`: vezi nota de la `.fp-header__bara` — scurtătura cu `0` pe
    orizontală ar lăsa textul lipit de marginea ecranului pe mobil. */

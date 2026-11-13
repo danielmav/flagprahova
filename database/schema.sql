@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS meniu (
   sablon        ENUM('standard','contact') NOT NULL DEFAULT 'standard',
   vizibil       TINYINT(1)   NOT NULL DEFAULT 1,
   publicat_la   DATE         NULL,
+  comentarii    TINYINT(1)   NOT NULL DEFAULT 0,
   legacy_id     INT UNSIGNED NULL,
   creat_la      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   modificat_la  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -98,4 +99,22 @@ CREATE TABLE IF NOT EXISTS mesaje_contact (
   ip_hash      CHAR(64) NULL,
   trimis_la    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   email_trimis TINYINT(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Întrebări și comentarii la ghiduri (dosare cu meniu.comentarii = 1). Publice doar
+-- după aprobare (stare = 'publicat'), iar emailul nu se afișează niciodată pe site.
+CREATE TABLE IF NOT EXISTS comentarii (
+  id           INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  meniu_id     INT UNSIGNED NOT NULL,
+  nume         VARCHAR(120) NOT NULL,
+  email        VARCHAR(190) NOT NULL,
+  mesaj        TEXT NOT NULL,
+  stare        ENUM('nou','publicat','respins') NOT NULL DEFAULT 'nou',
+  raspuns      TEXT NULL,
+  raspuns_la   DATETIME NULL,
+  ip_hash      CHAR(64) NULL,
+  trimis_la    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  email_trimis TINYINT(1) NOT NULL DEFAULT 0,
+  KEY idx_com_meniu (meniu_id, stare),
+  CONSTRAINT fk_com_meniu FOREIGN KEY (meniu_id) REFERENCES meniu(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

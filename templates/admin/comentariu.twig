@@ -1,0 +1,38 @@
+{% extends 'admin/layout.twig' %}
+{% block title %}Mesaj de la {{ c.nume }}{% endblock %}
+{% block content %}
+<h1 class="h4 mb-1">Mesaj de la {{ c.nume }}</h1>
+<p class="text-muted mb-3">{{ c.trimis_la|date('d.m.Y H:i') }} · <a href="mailto:{{ c.email }}">{{ c.email }}</a> · la <a href="{{ base }}/{{ c.sectiune_slug }}/{{ c.intrare_slug }}#intrebari" target="_blank" rel="noopener">{{ c.intrare_titlu }}</a></p>
+{% if eroare %}<div class="alert alert-danger" role="alert">{{ eroare }}</div>{% endif %}
+<form method="post" action="{{ base }}{{ admin_path }}/comentarii/{{ c.id }}">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="mb-3"><label class="form-label" for="f-nume">Nume (apare pe site)</label>
+                <input class="form-control" id="f-nume" name="nume" value="{{ c.nume }}" maxlength="120" required></div>
+            <div class="mb-3"><label class="form-label" for="f-mesaj">Mesaj</label>
+                <textarea class="form-control" id="f-mesaj" name="mesaj" rows="6" required>{{ c.mesaj }}</textarea>
+                <div class="form-text">Poți corecta textul înainte de publicare (ex. scoate un telefon sau alte date personale).</div></div>
+            <div class="mb-3"><label class="form-label" for="f-raspuns">Răspuns FLAG Prahova</label>
+                <textarea class="form-control" id="f-raspuns" name="raspuns" rows="6">{{ c.raspuns }}</textarea>
+                <div class="form-text">Apare pe site sub întrebare, după ce mesajul e publicat. Lasă gol dacă nu răspunzi.</div></div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card card-body">
+                <fieldset class="mb-3"><legend class="form-label fs-6">Stare</legend>
+                    {% for k, v in {nou: 'În așteptare (nu apare pe site)', publicat: 'Publicat pe site', respins: 'Respins (nu apare pe site)'} %}
+                    <div class="form-check"><input class="form-check-input" type="radio" name="stare" id="f-stare-{{ k }}" value="{{ k }}" {{ c.stare == k ? 'checked' }}>
+                        <label class="form-check-label" for="f-stare-{{ k }}">{{ v }}</label></div>
+                    {% endfor %}
+                </fieldset>
+                <button class="btn btn-primary w-100" type="submit">Salvează</button>
+                <a class="btn btn-link w-100" href="{{ base }}{{ admin_path }}/comentarii">Renunță</a>
+            </div>
+        </div>
+    </div>
+</form>
+<form method="post" action="{{ base }}{{ admin_path }}/comentarii/{{ c.id }}/sterge" class="mt-4" onsubmit="return confirm('Ștergi definitiv acest mesaj?');">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <button class="btn btn-outline-danger btn-sm" type="submit">Șterge mesajul</button>
+</form>
+{% endblock %}

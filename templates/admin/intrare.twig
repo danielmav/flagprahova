@@ -45,6 +45,12 @@
                 </select>
             </div>
 
+            <div class="adm-camp" data-pentru="dosar">
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="f-comentarii" name="comentarii" value="1" {{ intrare.comentarii|default(0) ? 'checked' }}>
+                    <label class="form-check-label" for="f-comentarii">Permite întrebări și comentarii (ex. la un ghid în consultare)</label></div>
+                <div class="form-text">Sub lista de documente apare un formular. Mesajele ajung în <a href="{{ base }}{{ admin_path }}/comentarii">Comentarii</a> și se publică doar după ce le aprobi.</div>
+            </div>
+
             <div class="adm-camp" data-pentru="galerie">
                 {% include 'admin/_galerie_camp.twig' %}
             </div>

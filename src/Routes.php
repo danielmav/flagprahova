@@ -63,6 +63,13 @@ return function (App $app, Twig $twig, array $container): void {
 
         $msg = fn() => new MesajeController($twig, $container);
         $g->get('/mesaje', fn($rq, $rs) => $msg()->index($rq, $rs));
+
+        $com = fn() => new \App\Admin\ComentariiController($twig, $container);
+        $g->get('/comentarii',                       fn($rq, $rs) => $com()->index($rq, $rs));
+        $g->get('/comentarii/{id:[0-9]+}',           fn($rq, $rs, $a) => $com()->editeaza($rq, $rs, $a));
+        $g->post('/comentarii/{id:[0-9]+}',          fn($rq, $rs, $a) => $com()->salveaza($rq, $rs, $a));
+        $g->post('/comentarii/{id:[0-9]+}/aproba',   fn($rq, $rs, $a) => $com()->aproba($rq, $rs, $a));
+        $g->post('/comentarii/{id:[0-9]+}/sterge',   fn($rq, $rs, $a) => $com()->sterge($rq, $rs, $a));
     })->add(new AuthMiddleware($container['auth'], $adminPath, $basePath));
 
     // Situl public. Ultimele, ca grupul de admin să rămână grupat deasupra.
@@ -77,5 +84,6 @@ return function (App $app, Twig $twig, array $container): void {
     // Regexul de perioadă garantează că ruta nu umbrește /sitemap.xml, /robots.txt,
     // /admin/... sau /fisiere/... .
     $app->get('/{perioada:[0-9]{4}-[0-9]{4}}/{slug:[a-z0-9-]+}', fn($rq, $rs, $a) => $pc()->pagina($rq, $rs, $a));
-    $app->post('/{perioada:[0-9]{4}-[0-9]{4}}/{slug:[a-z0-9-]+}', fn($rq, $rs, $a) => (new \App\Public\ContactController($twig, $container))->trimite($rq, $rs, $a));
+    $app->post('/{perioada:[0-9]{4}-[0-9]{4}}/{slug:[a-z0-9-]+}/intrebari', fn($rq, $rs, $a) => (new \App\Public\ComentariiController($twig, $container))->trimite($rq, $rs, $a));
+    $app->post('/{perioada:[0-9]{4}-[0-9]{4}}/{slug:[a-z0-9-]+}',fn($rq, $rs, $a) => (new \App\Public\ContactController($twig, $container))->trimite($rq, $rs, $a));
 };

@@ -60,7 +60,7 @@ final class MeniuController
         $parent = (int) ($request->getQueryParams()['parent'] ?? 0) ?: null;
         return $this->formular($response, [
             'id' => null, 'sectiune_id' => (int) $sec['id'], 'parent_id' => $parent, 'titlu' => '', 'slug' => '',
-            'tip' => 'document', 'url' => '', 'fisier_id' => null, 'sablon' => 'standard', 'vizibil' => 1, 'publicat_la' => null, 'continut_html' => '',
+            'tip' => 'document', 'url' => '', 'fisier_id' => null, 'sablon' => 'standard', 'vizibil' => 1, 'publicat_la' => null, 'continut_html' => '', 'comentarii' => 0,
         ], $sec);
     }
 
@@ -138,6 +138,8 @@ final class MeniuController
             'publicat_la' => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($in['publicat_la'] ?? '')) && strtotime((string) $in['publicat_la']) !== false
                 ? (string) $in['publicat_la'] : null,
             'continut_html' => (string) ($in['continut_html'] ?? ''),
+            // Întrebări și comentarii publice: doar pe dosare (ghiduri).
+            'comentarii' => (int) (($in['comentarii'] ?? '0') === '1'),
         ];
         // Sanitizăm ÎNAINTE de orice `formular()`: la re-randarea cu eroare (CSRF
         // expirat, titlu gol, link invalid, document fără fișier) conținutul se
@@ -171,6 +173,7 @@ final class MeniuController
         if ($date['tip'] !== 'document') { $date['fisier_id'] = null; }
         if ($date['tip'] !== 'link') { $date['url'] = ''; }
         if ($date['tip'] !== 'pagina') { $date['continut_html'] = ''; $date['sablon'] = 'standard'; }
+        if ($date['tip'] !== 'dosar') { $date['comentarii'] = 0; }
 
         if ($id === null) {
             // Într-un dosar, intrarea nouă apare prima (cea mai recentă sus); la

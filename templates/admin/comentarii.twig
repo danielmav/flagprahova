@@ -1,0 +1,50 @@
+{% extends 'admin/layout.twig' %}
+{% block title %}Comentarii{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ base }}/assets/vendor/datatables/dataTables.dataTables.min.css">
+<script src="{{ base }}/assets/vendor/jquery/jquery.min.js"></script>
+<script src="{{ base }}/assets/vendor/datatables/dataTables.min.js"></script>
+{% endblock %}
+{% block content %}
+{% set etichete = {nou: 'În așteptare', publicat: 'Publicat', respins: 'Respins'} %}
+{% set culori = {nou: 'warning', publicat: 'success', respins: 'secondary'} %}
+<h1 class="h3 mb-2">Întrebări și comentarii</h1>
+<p class="text-muted">Mesajele trimise la ghiduri apar pe site doar după ce le publici. Deschide un mesaj ca să-i scrii un răspuns (apare sub întrebare, ca „Răspuns FLAG Prahova”) sau să-l corectezi.</p>
+
+<form method="get" class="d-flex gap-2 align-items-center mb-3">
+    <label class="form-label m-0" for="f-stare">Arată</label>
+    <select class="form-select w-auto" id="f-stare" name="stare" onchange="this.form.submit()">
+        <option value="">toate</option>
+        {% for k, v in etichete %}<option value="{{ k }}" {{ stare == k ? 'selected' }}>{{ v|lower }}</option>{% endfor %}
+    </select>
+    <noscript><button class="btn btn-outline-secondary" type="submit">Filtrează</button></noscript>
+</form>
+
+<div class="table-responsive">
+<table class="table table-hover align-middle adm-table" data-dt data-dt-order='[[0,"desc"]]'>
+    <thead><tr><th>Data</th><th>Stare</th><th>Ghid</th><th>Nume</th><th>Mesaj</th><th data-nosort></th></tr></thead>
+    <tbody>
+    {% for c in comentarii %}
+        <tr>
+            <td class="small text-nowrap" data-order="{{ c.trimis_la }}">{{ c.trimis_la|date('d.m.Y H:i') }}</td>
+            <td><span class="badge text-bg-{{ culori[c.stare] }}">{{ etichete[c.stare] }}</span>{% if c.raspuns %} <span class="badge text-bg-light" title="Are răspuns">↳ răspuns</span>{% endif %}</td>
+            <td class="small"><a href="{{ base }}/{{ c.sectiune_slug }}/{{ c.intrare_slug }}#intrebari" target="_blank" rel="noopener">{{ c.intrare_titlu }}</a></td>
+            <td>{{ c.nume }}<br><a class="small" href="mailto:{{ c.email }}">{{ c.email }}</a></td>
+            <td class="small">{{ c.mesaj|length > 220 ? c.mesaj|slice(0, 220) ~ '…' : c.mesaj }}</td>
+            <td class="text-nowrap text-end">
+                <a class="btn btn-sm btn-outline-primary" href="{{ base }}{{ admin_path }}/comentarii/{{ c.id }}">Deschide</a>
+                {% if c.stare != 'publicat' %}
+                <form method="post" action="{{ base }}{{ admin_path }}/comentarii/{{ c.id }}/aproba" class="d-inline">
+                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                    <button class="btn btn-sm btn-success" type="submit">Publică</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% else %}
+        <tr><td colspan="6" class="text-muted">Niciun mesaj{{ stare ? ' ' ~ etichete[stare]|lower }}.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

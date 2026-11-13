@@ -109,7 +109,8 @@ final class Bootstrap
         $container['upload']         = new Fisiere\Upload($container['settings']['upload']['dir'], $container['settings']['upload']['max_bytes']);
         $container['miniatura']      = new Fisiere\Miniatura($container['settings']['upload']['dir']);
         $container['setari']         = new Setari\Repository($container['db']);
-        $container['mailer']         = new Mail\Mailer(
+        $container['comentarii']     = new Comentarii\Repository($container['db']);
+        $container['mailer']        = new Mail\Mailer(
             $container['settings']['mail'],
             $root . '/storage/logs/mail.log',
             (string) $container['settings']['app']['env']

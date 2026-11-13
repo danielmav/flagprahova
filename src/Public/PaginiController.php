@@ -80,6 +80,7 @@ final class PaginiController
             return $this->twig->render($response, 'sectiune/galerie.twig', $vars);
         }
         if ($nod['tip'] === 'dosar') {
+            $vars += ComentariiController::variabile($this->container, (array) $rand, $request->getQueryParams());
             return $this->twig->render($response, 'sectiune/dosar.twig', $vars);
         }
         // Galeriile-copil ale unei pagini se randează sub conținut, în acordeon.

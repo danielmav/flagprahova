@@ -11,7 +11,7 @@ final class Repository
 {
     public const TIPURI  = ['pagina', 'document', 'dosar', 'link', 'galerie'];
     public const SABLOANE = ['standard', 'contact'];
-    private const COLOANE = ['parent_id', 'titlu', 'slug', 'tip', 'continut_html', 'fisier_id', 'url', 'sablon', 'vizibil', 'publicat_la', 'legacy_id'];
+    private const COLOANE = ['parent_id', 'titlu', 'slug', 'tip', 'continut_html', 'fisier_id', 'url', 'sablon', 'vizibil', 'publicat_la', 'comentarii', 'legacy_id'];
 
     private PDO $pdo;
 
@@ -177,8 +177,8 @@ final class Repository
             $ordine = (int) $st->fetchColumn();
         }
 
-        $st = $this->pdo->prepare('INSERT INTO meniu (sectiune_id, parent_id, ordine, titlu, slug, tip, continut_html, fisier_id, url, sablon, vizibil, publicat_la, legacy_id)
-            VALUES (:s, :p, :o, :t, :sl, :tip, :c, :f, :u, :sab, :v, :pub, :lg)');
+        $st = $this->pdo->prepare('INSERT INTO meniu (sectiune_id, parent_id, ordine, titlu, slug, tip, continut_html, fisier_id, url, sablon, vizibil, publicat_la, comentarii, legacy_id)
+            VALUES (:s, :p, :o, :t, :sl, :tip, :c, :f, :u, :sab, :v, :pub, :com, :lg)');
         $st->execute([
             's' => $sid, 'p' => $parent, 'o' => $ordine,
             't' => trim((string) $date['titlu']), 'sl' => $slug,
@@ -189,6 +189,7 @@ final class Repository
             'sab' => in_array($date['sablon'] ?? '', self::SABLOANE, true) ? $date['sablon'] : 'standard',
             'v' => (int) ($date['vizibil'] ?? 1),
             'pub' => ($date['publicat_la'] ?? '') !== '' ? (string) $date['publicat_la'] : null,
+            'com' => (int) ($date['comentarii'] ?? 0),
             'lg' => isset($date['legacy_id']) ? (int) $date['legacy_id'] : null,
         ]);
         return (int) $this->pdo->lastInsertId();

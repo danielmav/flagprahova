@@ -128,3 +128,37 @@ document.addEventListener('click', function (ev) {
     f.addEventListener('submit', function () { document.getElementById('f-continut').value = q.root.innerHTML; });
   }
 })();
+
+/* DataTables pe orice <table data-dt> (biblioteca se încarcă doar pe paginile care o folosesc).
+   <th data-nosort> = coloană fără sortare/căutare; <td data-order> = valoare de sortare (ex. dată ISO);
+   rândul gol ({% else %} cu colspan) se scoate și textul lui devine mesajul de tabel gol. */
+(function () {
+  if (typeof DataTable === 'undefined') return;
+  var LANG = {
+    search: 'Caută:', searchPlaceholder: 'în listă…', lengthMenu: '_MENU_ pe pagină',
+    info: '_START_–_END_ din _TOTAL_', infoEmpty: '0 rezultate', infoFiltered: '(filtrat din _MAX_)',
+    zeroRecords: 'Niciun rezultat pentru căutare.', emptyTable: 'Nicio înregistrare.',
+    paginate: { first: '«', previous: '‹', next: '›', last: '»' },
+    aria: { orderable: 'Sortează după coloană', orderableReverse: 'Sortează invers' }
+  };
+  DataTable.ext.errMode = function (s, tn, msg) { if (window.console) console.warn(msg); };
+  document.querySelectorAll('table[data-dt]').forEach(function (table) {
+    var lang = Object.assign({}, LANG);
+    var cols = table.querySelectorAll('thead th').length;
+    table.querySelectorAll('tbody > tr').forEach(function (tr) {
+      var td = tr.querySelector('td[colspan]');
+      if (td && tr.children.length === 1 && td.colSpan >= cols) { lang.emptyTable = td.textContent.trim() || lang.emptyTable; tr.remove(); }
+    });
+    var nosort = [];
+    table.querySelectorAll('thead th').forEach(function (th, i) { if (th.hasAttribute('data-nosort')) nosort.push(i); });
+    var order = [];
+    try { order = JSON.parse(table.getAttribute('data-dt-order') || '[]'); } catch (e) { order = []; }
+    new DataTable(table, {
+      order: order, pageLength: 25, autoWidth: false,
+      lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'Toate']],
+      paging: table.querySelectorAll('tbody > tr').length > 25,
+      columnDefs: nosort.length ? [{ targets: nosort, orderable: false, searchable: false }] : [],
+      language: lang
+    });
+  });
+})();
