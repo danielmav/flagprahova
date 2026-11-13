@@ -32,6 +32,29 @@ try {
     $c = corp(cerere('GET', '/2021-2027/'));
     ok('meniu: ghidul fără submeniu, dosarul obișnuit cu submeniu', !str_contains($c, "Anexa $m") && str_contains($c, "Fiu $m"));
     ok('pagina ghidului listează în continuare anexa', str_contains(corp(cerere('GET', $url)), "Anexa $m"));
+    // Sub „Acțiuni” (legacy_id 9003), orice dosar e link simplu, chiar fără comentarii.
+    $actiuni = (int) $pdo->query('SELECT id FROM meniu WHERE legacy_id = 9003')->fetchColumn();
+    if ($actiuni > 0) {
+        $ins->execute(['s' => $s['id'], 't' => "Actiune $m", 'sl' => "actiune-$m", 'c' => 0]);
+        $ids[] = $actiune = (int) $pdo->lastInsertId();
+        $pdo->exec("UPDATE meniu SET parent_id = $actiuni WHERE id = $actiune");
+        $copil->execute(['s' => $s['id'], 'p' => $actiune, 't' => "Pdf $m", 'sl' => "pdf-$m"]);
+        $ids[] = (int) $pdo->lastInsertId();
+        $c = corp(cerere('GET', '/2021-2027/'));
+        ok('meniu: acțiunea fără comentarii nu are submeniu', str_contains($c, "Actiune $m") && !str_contains($c, "Pdf $m"));
+        $slugAct = $pdo->query("SELECT slug FROM meniu WHERE id = $actiuni")->fetchColumn();
+        $c = corp(cerere('GET', "/2021-2027/$slugAct"));
+        ok('pagina Acțiuni: acțiunea e un rând, fără PDF-urile ei', str_contains($c, "href=\"/2021-2027/actiune-$m\"") && !str_contains($c, "Pdf $m"));
+    } else {
+        ok('fără dosarul Acțiuni în bază (notat)', true);
+    }
+    // Pagina părintelui (ca „Acțiuni”): ghidul e un rând cu link, fără anexele lui.
+    $ins->execute(['s' => $s['id'], 't' => "Actiuni $m", 'sl' => "actiuni-$m", 'c' => 0]);
+    $ids[] = $act = (int) $pdo->lastInsertId();
+    $pdo->exec("UPDATE meniu SET parent_id = $act WHERE id IN ($ghid, {$ids[1]})");
+    $c = corp(cerere('GET', "/2021-2027/actiuni-$m"));
+    $main = substr($c, (int) strpos($c, '<main'));
+    ok('pagina părinte: ghidul ca link, fără anexe; dosarul obișnuit desfăcut', str_contains($main, "href=\"$url\"") && !str_contains($c, "Anexa $m") && str_contains($main, "Fiu $m"));
 
     $tok = (string) (time() - 10) . '.' . hash_hmac('sha256', (string) (time() - 10), 'abc');
     $bun = ['_csrf' => 'abc', '_t' => $tok, 'website' => '', 'nume' => "Ana $m", 'email' => "ana-$m@example.com", 'mesaj' => "Intrebare $m despre eligibilitate?", 'acord' => '1'];

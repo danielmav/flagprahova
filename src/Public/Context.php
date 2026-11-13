@@ -10,6 +10,9 @@ use App\Setari\Repository as Setari;
 /** Datele comune ale layout-ului public, calculate o dată per cerere. */
 final class Context
 {
+    /** `legacy_id` al dosarului „Acțiuni” (2021-2027, `Migrare\Harta`); stabil și pe producție. */
+    private const ACTIUNI = 9003;
+
     private ?array $sectiuni = null;
 
     public function __construct(
@@ -83,7 +86,7 @@ final class Context
     /** Arborele vizibil al secțiunii, cu `href`, `extern` și `fila_noua` pe fiecare nod. */
     public function arbore(array $sectiune): array
     {
-        $decoreaza = function (array $lista) use (&$decoreaza, $sectiune): array {
+        $decoreaza = function (array $lista, bool $subActiuni = false) use (&$decoreaza, $sectiune): array {
             foreach ($lista as &$n) {
                 $n['extern']    = $n['tip'] === 'link';
                 // Linkurile externe și documentele (PDF etc.) se deschid în filă nouă.
@@ -95,10 +98,12 @@ final class Context
                     'link'     => (string) $n['url'],
                     default    => $this->base() . '/' . $sectiune['slug'] . '/' . $n['slug'],
                 };
-                $n['copii'] = $decoreaza($n['copii']);
-                // Un ghid (dosar cu întrebări) e link simplu în meniu: anexele lui se
-                // văd pe pagina ghidului, nu într-un submeniu. `copii` rămâne întreg.
-                $n['submeniu'] = $n['copii'] !== [] && !($n['tip'] === 'dosar' && !empty($n['comentarii']));
+                $n['copii'] = $decoreaza($n['copii'], (int) ($n['legacy_id'] ?? 0) === self::ACTIUNI);
+                // O acțiune/un ghid (dosar direct sub „Acțiuni” sau dosar cu întrebări) e
+                // link simplu în meniu și un singur rând pe pagina părintelui: PDF-urile
+                // lui se văd doar pe pagina proprie. `copii` rămâne întreg.
+                $ghid = $n['tip'] === 'dosar' && ($subActiuni || !empty($n['comentarii']));
+                $n['submeniu'] = $n['copii'] !== [] && !$ghid;
             }
             unset($n);
             return $lista;
